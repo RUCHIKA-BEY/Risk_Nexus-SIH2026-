@@ -10,11 +10,13 @@ from app.schemas import (
     CompareProjectsResponse,
     OfficialPredictionResponse,
     SingleModelResult,
+    TrajectoryResponse,
 )
 from app.services.project_service import (
     list_projects_paginated,
     get_project_detail,
     get_project_timeline,
+    get_project_rows,
     get_project_rows_as_of,
     get_portfolio_metrics,
     compare_projects,
@@ -94,16 +96,36 @@ def get_timeline(project_id: str):
     return timeline
 
 
+@router.get("/projects/{project_id}/trajectory", response_model=TrajectoryResponse, tags=["Projects"])
+def get_trajectory_route(project_id: str):
+    from app.services.project_service import get_project_trajectory
+    trajectory = get_project_trajectory(project_id)
+    if not trajectory:
+        raise HTTPException(status_code=404, detail=f"Project {project_id} not found.")
+    return trajectory
+
+
 @router.get("/projects/{project_id}/assessment", response_model=OfficialPredictionResponse, tags=["Projects"])
-def get_assessment(project_id: str, as_of: str):
+def get_assessment(project_id: str, as_of: Optional[str] = Query(default=None)):
     """
     Official risk assessment for a project at a given as-of month.
     Uses only information available at or before as_of. 
     Never reads future rows during prediction.
+    If as_of is omitted, automatically resolves to the latest available reporting month.
     """
-    rows = get_project_rows_as_of(project_id, as_of)
-    if rows.empty:
-        raise HTTPException(status_code=404, detail=f"No data for project {project_id} at or before {as_of}.")
+    if as_of:
+        rows = get_project_rows_as_of(project_id, as_of)
+        if rows.empty:
+            if get_project_rows(project_id).empty:
+                raise HTTPException(status_code=404, detail=f"Project {project_id} not found.")
+            raise HTTPException(status_code=404, detail=f"No data for project {project_id} at or before {as_of}.")
+    else:
+        rows_all = get_project_rows(project_id)
+        if rows_all.empty:
+            raise HTTPException(status_code=404, detail=f"Project {project_id} not found.")
+        latest_dt = rows_all["report_month"].max()
+        as_of = latest_dt.strftime("%Y-%m-%d")
+        rows = rows_all[rows_all["report_month"] <= latest_dt].copy()
 
     row = rows.sort_values("report_month").iloc[-1]
     feature_dict = build_feature_dict(row, OFFICIAL_XGB_FEATURES)
@@ -149,15 +171,22 @@ def get_assessment(project_id: str, as_of: str):
 
 
 @router.get("/projects/{project_id}/actual-outcome", tags=["Projects"])
-def get_actual_outcome_route(project_id: str, as_of: str):
+def get_actual_outcome_route(project_id: str, as_of: Optional[str] = Query(default=None)):
     """
     Reveal the actual six-month outcomes. SEPARATE from /assessment.
     The predicted_classes must be provided by the client (from a prior /assessment call).
     This endpoint does NOT re-run predictions.
     """
-    rows = get_project_rows_as_of(project_id, as_of)
-    if rows.empty:
-        raise HTTPException(status_code=404, detail=f"No data for {project_id} at {as_of}.")
+    if as_of:
+        rows = get_project_rows_as_of(project_id, as_of)
+        if rows.empty:
+            raise HTTPException(status_code=404, detail=f"No data for {project_id} at {as_of}.")
+    else:
+        rows_all = get_project_rows(project_id)
+        if rows_all.empty:
+            raise HTTPException(status_code=404, detail=f"Project {project_id} not found.")
+        latest_dt = rows_all["report_month"].max()
+        as_of = latest_dt.strftime("%Y-%m-%d")
 
     from app.services.outcome_service import get_actual_outcome
     result = get_actual_outcome(project_id, as_of, predicted_classes={})

@@ -1,131 +1,138 @@
 import { useEffect, useState } from 'react';
-import { useParams, NavLink, Outlet } from 'react-router-dom';
-import { fetchProjectDetails } from '../services/api';
-import { Activity, AlertTriangle, FileText, CheckCircle2 } from 'lucide-react';
-import StatusBadge from '../components/shared/StatusBadge';
+import { useParams, NavLink, Outlet, Link } from 'react-router-dom';
+import { fetchMLProjectDetail } from '../services/mlApi';
+import { ShieldCheck, Activity, AlertTriangle, ArrowLeft, Clock, MapPin, TrendingUp, Layers } from 'lucide-react';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 
 export default function ChildProjectDashboard() {
-  const { id } = useParams();
+  const params = useParams();
+  const projectId = params.id || params.projectId || '';
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!projectId) return;
     setLoading(true);
-    fetchProjectDetails(id)
-      .then(setProject)
+    setError(null);
+
+    fetchMLProjectDetail(projectId)
+      .then((data) => {
+        setProject(data);
+      })
+      .catch((err) => {
+        console.error('Project load error:', err);
+        setError(err.message || 'Failed to load project');
+      })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [projectId]);
 
   if (loading) {
-    return <div className="p-6 text-slate-500">Loading Project Details...</div>;
+    return (
+      <div className="p-12 flex flex-col items-center justify-center min-h-[400px] space-y-3">
+        <LoadingSpinner />
+        <p className="text-xs text-slate-500">Loading project {projectId} from backend...</p>
+      </div>
+    );
   }
 
-  if (!project) {
-    return <div className="p-6 text-slate-500">Project not found.</div>;
+  if (error || !project) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto space-y-4">
+        <Link
+          to="/projects/all"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          <ArrowLeft size={14} /> Back to All Projects
+        </Link>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center space-y-3">
+          <AlertTriangle className="mx-auto text-amber-500" size={36} />
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            {error ? 'Error Loading Project' : 'Project Not Found'}
+          </h2>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            {error
+              ? `Could not retrieve data for project ${projectId}. Details: ${error}`
+              : `Project with ID "${projectId}" was not found in the Phase-6 database.`}
+          </p>
+          <Link
+            to="/projects/all"
+            className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            Browse All Projects
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const tabClasses = ({ isActive }) =>
-    `px-4 py-2 border-b-2 font-medium text-sm transition-colors ${
+    `px-4 py-2.5 border-b-2 font-medium text-xs transition-colors flex items-center gap-2 ${
       isActive
-        ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+        ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
         : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
     }`;
 
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
-      <header className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-        <div className="flex items-center justify-between">
+      <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 sticky top-0 z-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {project.name}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Project ID: {project.id} | Department: {project.department} | State: {project.state}
+            <div className="flex items-center gap-2">
+              <Link
+                to="/projects/all"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                title="Back to All Projects"
+              >
+                <ArrowLeft size={16} />
+              </Link>
+              <h1 className="text-xl font-bold font-mono text-slate-900 dark:text-white">
+                {project.project_id}
+              </h1>
+              {project.name && (
+                <span className="text-sm font-sans font-medium text-slate-600 dark:text-slate-300">
+                  — {project.name}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-3">
+              <span>Sector: <strong className="text-slate-700 dark:text-slate-300">{project.sector || '—'}</strong></span>
+              <span>•</span>
+              <span>State: <strong className="text-slate-700 dark:text-slate-300">{project.state || '—'}</strong></span>
+              <span>•</span>
+              <span>Timeline: <strong className="text-slate-700 dark:text-slate-300">{project.available_months} months</strong></span>
             </p>
           </div>
-          <div className="px-3 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 rounded text-sm font-medium border border-amber-200 dark:border-amber-800">
-            Progress: {project.physicalProgress}%
+
+          <div className="flex items-center gap-2">
+            <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
+              project.status === 'Completed'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
+            }`}>
+              {project.status || 'Ongoing'}
+            </span>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <nav className="flex gap-2 mt-3 -mb-4 border-t border-slate-100 dark:border-slate-800 pt-1">
+          <NavLink to={`/projects/${encodeURIComponent(projectId)}/risk`} className={tabClasses}>
+            <ShieldCheck size={14} /> Risk Assessment
+          </NavLink>
+          <NavLink to={`/projects/${encodeURIComponent(projectId)}/trajectory`} className={tabClasses}>
+            <TrendingUp size={14} /> Risk Trajectory
+          </NavLink>
+          <NavLink to={`/projects/${encodeURIComponent(projectId)}/milestones`} className={tabClasses}>
+            <Clock size={14} /> Timeline & Milestones
+          </NavLink>
+        </nav>
       </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-        
-        {/* Tabbed Navigation */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <nav className="flex border-b border-slate-200 dark:border-slate-700 px-2 pt-2">
-            <NavLink to="progress" className={tabClasses}>Progress</NavLink>
-            <NavLink to="milestones" className={tabClasses}>Milestones</NavLink>
-            <NavLink to="map" className={tabClasses}>Map</NavLink>
-          </nav>
-          <div className="p-4 min-h-[200px]">
-            <Outlet />
-          </div>
-        </div>
-
-        {/* Project Health Module */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <Activity size={18} className="text-blue-500" />
-              AI Insights
-            </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {project.predictedCostEscalation > 0 
-                ? `AI models predict a potential cost escalation of ${project.predictedCostEscalation}% for this project based on current financial and physical progress trends.`
-                : 'AI models currently project stable financial delivery. No significant cost escalations are predicted.'}
-            </p>
-          </div>
-          <div className={`bg-white dark:bg-slate-800 border-l-4 border-y border-r border-slate-200 dark:border-y-slate-700 dark:border-r-slate-700 p-4 shadow-sm ${project.riskLevel === 'Critical' ? 'border-l-rose-500' : project.riskLevel === 'High' ? 'border-l-orange-500' : 'border-l-emerald-500'}`}>
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <AlertTriangle size={18} className={project.riskLevel === 'Critical' ? 'text-rose-500' : project.riskLevel === 'High' ? 'text-orange-500' : 'text-emerald-500'} />
-                Risk Alerts
-              </h2>
-              <StatusBadge status={project.riskLevel} />
-            </div>
-            <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
-              {project.riskLevel === 'Critical' && (
-                <li>• Major delays detected. Immediate intervention required to prevent cascading schedule slips.</li>
-              )}
-              {project.riskLevel === 'High' && (
-                <li>• Potential bottleneck identified in upcoming milestones. Monitor closely.</li>
-              )}
-              {(project.riskLevel === 'Medium' || project.riskLevel === 'Low') && (
-                <li>• Project is currently tracking within acceptable risk parameters.</li>
-              )}
-            </ul>
-          </div>
-        </section>
-
-        {/* Actions Module */}
-        <section className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-emerald-500" />
-            Actions
-          </h2>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/50">
-              <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-white">Review Resource Allocation</p>
-                <p className="text-xs text-slate-500">Pending approval from Lead Engineer</p>
-              </div>
-              <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors">
-                Take Action
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Auto Report Trigger */}
-        <section className="flex justify-end pt-4">
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white text-sm font-medium rounded hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors shadow-sm">
-            <FileText size={16} />
-            Generate Auto Report
-          </button>
-        </section>
+      {/* Main Outlet */}
+      <div className="flex-1">
+        <Outlet context={{ project }} />
       </div>
     </div>
   );

@@ -258,13 +258,14 @@ function FCMPanel({ projectId, asOf }) {
 // ── Main Page ───────────────────────────────────────────────────────────────────
 
 export default function RiskAssessment() {
-  const { id: projectId } = useParams();
-  const [searchParams] = useSearchParams();
-  const asOf = searchParams.get('as_of') || '';
+  const params = useParams();
+  const projectId = params.id || params.projectId || '';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlAsOf = searchParams.get('as_of') || '';
 
   const [project, setProject] = useState(null);
   const [timeline, setTimeline] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(asOf);
+  const [selectedMonth, setSelectedMonth] = useState(urlAsOf);
   const [prediction, setPrediction] = useState(null);
   const [outcome, setOutcome] = useState(null);
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -288,20 +289,20 @@ export default function RiskAssessment() {
     ]).then(([p, t]) => {
       setProject(p);
       setTimeline(t);
-      // Auto-select last eligible month
-      if (!selectedMonth && t?.timeline) {
-        const eligible = t.timeline.filter(m => m.is_demo_eligible);
-        if (eligible.length > 0) {
-          setSelectedMonth(eligible[eligible.length - 1].report_month.slice(0, 7));
-        } else if (t.timeline.length > 0) {
-          setSelectedMonth(t.timeline[t.timeline.length - 1].report_month.slice(0, 7));
-        }
+      // Auto-select as_of or last eligible/available month
+      if (urlAsOf) {
+        setSelectedMonth(urlAsOf);
+      } else if (p?.last_report_month) {
+        setSelectedMonth(p.last_report_month);
+      } else if (t?.timeline && t.timeline.length > 0) {
+        setSelectedMonth(t.timeline[t.timeline.length - 1].report_month.slice(0, 7));
       }
     });
-  }, [projectId]);
+  }, [projectId, urlAsOf]);
 
-  const runAssessment = useCallback(async () => {
-    if (!projectId || !selectedMonth) return;
+  const runAssessment = useCallback(async (targetMonth) => {
+    const monthToUse = targetMonth || selectedMonth;
+    if (!projectId || !monthToUse) return;
     setLoading(true);
     setError(null);
     setPrediction(null);
@@ -310,7 +311,7 @@ export default function RiskAssessment() {
     setAnalysisPred(null);
     setBenchmarkPred(null);
     try {
-      const result = await fetchOfficialPrediction(projectId, selectedMonth);
+      const result = await fetchOfficialPrediction(projectId, monthToUse);
       setPrediction(result);
       setScoreAnimation(true);
       setTimeout(() => setScoreAnimation(false), 1500);
@@ -318,6 +319,13 @@ export default function RiskAssessment() {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+  }, [projectId, selectedMonth]);
+
+  // Auto-run assessment when month is selected
+  useEffect(() => {
+    if (projectId && selectedMonth) {
+      runAssessment(selectedMonth);
     }
   }, [projectId, selectedMonth]);
 
