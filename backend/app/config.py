@@ -28,6 +28,14 @@ CANONICAL_DATA_DIR: Path = Path(
 )
 CANONICAL_DATA_PATH: Path = CANONICAL_DATA_DIR / "enhanced_phase6_corrected.csv"
 
+# ── Cloudflare R2 Configuration ───────────────────────────────────────────────
+R2_ENDPOINT_URL: str = os.getenv("R2_ENDPOINT_URL", "")
+R2_ACCESS_KEY_ID: str = os.getenv("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY: str = os.getenv("R2_SECRET_ACCESS_KEY", "")
+R2_BUCKET_NAME: str = os.getenv("R2_BUCKET_NAME", "")
+R2_OBJECT_KEY: str = os.getenv("R2_OBJECT_KEY", "")
+R2_CACHE_DIR: Path = Path(os.getenv("R2_CACHE_DIR", str(BASE_DIR / ".cache" / "r2_data")))
+
 TVM_DATA_DIR: Path = Path(
     os.getenv(
         "TVM_DATA_DIR",

@@ -18,6 +18,12 @@ from app.config import (
     DEMO_DATA_DIR,
     SCHEDULE_ALERT_TOP_N,
     SCHEDULE_ALERT_TOP_PERCENT,
+    R2_ENDPOINT_URL,
+    R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY,
+    R2_BUCKET_NAME,
+    R2_OBJECT_KEY,
+    R2_CACHE_DIR,
 )
 from app.schemas import (
     ProjectDetail,
@@ -63,14 +69,46 @@ def _val(row, col, default=None):
 def load_demo_data() -> None:
     """
     Startup loader:
-    1. Loads canonical dataset (enhanced_phase6_corrected.csv) if present,
-       or falls back to demo_rows.csv.
-    2. Builds an optimized project summary index for sub-millisecond lookups.
-    3. Loads demo_projects.json for historical validation demo labels.
+    1. Loads canonical dataset (enhanced_phase6_corrected.csv) if present locally.
+    2. If not present but R2 environment variables are configured, downloads the canonical
+       dataset from Cloudflare R2 and caches it locally.
+    3. If neither local nor R2 data is available/successful, falls back to demo_rows.csv.
+    4. Builds an optimized project summary index for sub-millisecond lookups.
+    5. Loads demo_projects.json for historical validation demo labels.
     """
     global _full_df, _summary_df, _demo_manifest, _demo_pids
 
     data_path = CANONICAL_DATA_PATH
+
+    # R2 Download Mechanism
+    r2_ready = all([R2_ENDPOINT_URL, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_OBJECT_KEY])
+
+    if r2_ready and not data_path.exists():
+        R2_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        cached_file = R2_CACHE_DIR / Path(R2_OBJECT_KEY).name
+
+        if not cached_file.exists():
+            logger.info("R2 configuration detected. Downloading canonical dataset from Cloudflare R2...")
+            try:
+                import boto3
+                s3_client = boto3.client(
+                    's3',
+                    endpoint_url=R2_ENDPOINT_URL,
+                    aws_access_key_id=R2_ACCESS_KEY_ID,
+                    aws_secret_access_key=R2_SECRET_ACCESS_KEY,
+                    region_name='auto'
+                )
+                logger.info(f"Downloading s3://{R2_BUCKET_NAME}/{R2_OBJECT_KEY} to {cached_file}")
+                s3_client.download_file(R2_BUCKET_NAME, R2_OBJECT_KEY, str(cached_file))
+                logger.info("Successfully downloaded canonical dataset from R2.")
+            except Exception as e:
+                logger.error(f"Failed to download canonical dataset from R2: {e}")
+                raise RuntimeError(f"R2 download failed. Please check configuration and network: {e}") from e
+
+        if cached_file.exists():
+            logger.info(f"Using cached R2 canonical dataset from {cached_file}")
+            data_path = cached_file
+
     if not data_path.exists():
         fallback_path = DEMO_DATA_DIR / "demo_rows.csv"
         if fallback_path.exists():
@@ -372,7 +410,7 @@ def get_portfolio_metrics() -> PortfolioMetricsResponse:
     total_projects = len(sdf)
     total_budget = float(sdf["original_cost"].dropna().sum())
     total_exp = float(sdf["cumulative_expenditure"].dropna().sum())
-    
+
     status_counts = sdf["status"].str.lower().value_counts()
     completed_count = int(status_counts.get("completed", 0))
     ongoing_count = int(status_counts.get("ongoing", total_projects - completed_count))
