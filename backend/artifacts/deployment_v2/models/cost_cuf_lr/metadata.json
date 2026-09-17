@@ -1,0 +1,173 @@
+{
+ "model_id": "cost_cuf_lr",
+ "model_family": "Logistic Regression",
+ "model_family_label": "Original CUF LR baseline",
+ "benchmark_label": "Original/Legacy CUF Logistic Regression Benchmark",
+ "model_type": "sklearn Pipeline[ColumnTransformer(fitted) -> LogisticRegression(fitted)] wrapped from legacy bundle, not refit",
+ "target": "cost",
+ "target_column": "cost_event_6m",
+ "dashboard_role": "statistical comparison",
+ "benchmark_for": [
+  "cost_cuf_xgb"
+ ],
+ "benchmark_only": true,
+ "may_replace_xgboost_predictions": false,
+ "timeline_feature_limitation": true,
+ "methodological_warning": "This pipeline is the original CUF Logistic Regression benchmark. It retains project_age_months and related planned-timeline ratios. These fields were later identified as representing panel-tenure rather than verified original project age. The model is retained only as a historical/statistical benchmark and is not the primary deployed risk estimator.",
+ "deployment_ready": true,
+ "source_bundle": "logistic_cost_common.joblib",
+ "source_bundle_sha256": "87e0f6462d384fe309e3b94a8859b211d26c27906231a613f5e4d01142bccae0",
+ "source_model_version": "phase6_logistic_v1",
+ "source_run_timestamp": "2026-09-09T18:16:32Z",
+ "source_training_data": "model_ready_common_6m.csv (Phase 5); scored here on common_phase6_corrected.csv (same Split-A eligible rows and values)",
+ "estimator": {
+  "C": 1.0,
+  "class_weight": null,
+  "penalty": "l2",
+  "solver": "lbfgs",
+  "max_iter": 2000,
+  "random_state": 42,
+  "selection": "C and class_weight chosen on Split-A validation PR-AUC (phase6_logistic.py)"
+ },
+ "preprocessing": {
+  "numeric": "SimpleImputer(median, add_indicator=True) -> StandardScaler, fit on train",
+  "categorical": "SimpleImputer(constant 'missing') -> OneHotEncoder(infrequent_if_exist, min_frequency=25), fit on train"
+ },
+ "threshold": 0.4,
+ "threshold_rule": "max F1 on Split-A VALIDATION over 0.05..0.95 step 0.05 (phase6_logistic.py); re-derived here from validation predictions",
+ "threshold_reproduced_from_validation": true,
+ "validation_f1_at_threshold": 0.5369127516778524,
+ "split": "split_a",
+ "counts": {
+  "train": {
+   "rows": 2869,
+   "projects": 385,
+   "positives": 379,
+   "prevalence": 0.1321017776228651
+  },
+  "validation": {
+   "rows": 1385,
+   "projects": 95,
+   "positives": 58,
+   "prevalence": 0.04187725631768953
+  },
+  "test": {
+   "rows": 3460,
+   "projects": 174,
+   "positives": 167,
+   "prevalence": 0.04826589595375722
+  }
+ },
+ "validation_metrics": {
+  "pr_auc": 0.44248900180187284,
+  "roc_auc": 0.9571888886001612,
+  "brier": 0.039770673288471815,
+  "precision": 0.43956043956043955,
+  "recall": 0.6896551724137931,
+  "f1": 0.5369127516778524,
+  "tp": 40,
+  "fp": 51,
+  "tn": 1276,
+  "fn": 18,
+  "alerts": 91,
+  "alert_rate": 0.06570397111913358
+ },
+ "test_metrics": {
+  "pr_auc": 0.31746026185792064,
+  "roc_auc": 0.8657249727693112,
+  "brier": 0.06030394293424479,
+  "precision": 0.2976588628762542,
+  "recall": 0.5329341317365269,
+  "f1": 0.38197424892703863,
+  "tp": 89,
+  "fp": 210,
+  "tn": 3083,
+  "fn": 78,
+  "alerts": 299,
+  "alert_rate": 0.08641618497109826
+ },
+ "reproduction_vs_original_logistic_results": {
+  "validation": {
+   "pr_auc_abs_diff": 5.551115123125783e-17,
+   "roc_auc_abs_diff": 0.0,
+   "brier_abs_diff": 1.3877787807814457e-17
+  },
+  "test": {
+   "pr_auc_abs_diff": 5.551115123125783e-17,
+   "roc_auc_abs_diff": 0.0,
+   "brier_abs_diff": 9.020562075079397e-17
+  }
+ },
+ "split_b_diagnostic_metadata_only": [
+  {
+   "split_part": "validation",
+   "n": 1968,
+   "n_pos": 61,
+   "pr_auc": 0.1454857331023004,
+   "roc_auc": 0.8395213492998186,
+   "brier": 0.1183451863780074,
+   "threshold_used": "0.6"
+  },
+  {
+   "split_part": "test",
+   "n": 153,
+   "n_pos": 19,
+   "pr_auc": 0.4966981838749071,
+   "roc_auc": 0.7772977219167321,
+   "brier": 0.1608652186640642,
+   "threshold_used": "0.6"
+  }
+ ],
+ "comparison_caveat": "Same Split-A eligible population as the XGBoost models, but different feature sets; compare as benchmark only.",
+ "coefficients_standardised": {
+  "original_cost": 0.4020912543068013,
+  "planned_duration_months": 0.07530748700522573,
+  "cumulative_expenditure": -0.29101931009706095,
+  "cumulative_to_original_ratio": 1.427863576618749,
+  "elapsed_planned_ratio": 0.18402162080998552,
+  "planned_remaining_months": -0.20321471740094899,
+  "project_age_months": 0.1669040880569101,
+  "exp_change_1m": 0.024116247188201913,
+  "exp_change_3m": -0.015239434440060557,
+  "exp_slope_3m": 0.010993629837163718,
+  "n_cost_revisions_to_date": 0.11894491057175556,
+  "n_schedule_revisions_to_date": 0.34526707563827663,
+  "expenditure_available": 0.0,
+  "planned_completion_available": 0.04648772136208761,
+  "sector_available": 0.0,
+  "agency_available": 0.0,
+  "state_available": 0.0,
+  "planned_duration_months_was_missing": -0.0464877213620869,
+  "elapsed_planned_ratio_was_missing": 0.2112059071652481,
+  "planned_remaining_months_was_missing": -0.0464877213620869,
+  "exp_change_1m_was_missing": 0.02451288059753199,
+  "exp_change_3m_was_missing": 0.012639777921959793,
+  "exp_slope_3m_was_missing": 0.012639777921959793,
+  "sector_std_COAL": 0.17964897548436629,
+  "sector_std_HEALTH AND FAMILY WELFARE": 1.0462228658779673,
+  "sector_std_PETROLEUM": -0.6643712219256745,
+  "sector_std_POWER": -0.5626466492128308,
+  "sector_std_RAILWAYS": 0.8163905400256051,
+  "sector_std_ROAD TRANSPORT AND HIGHWAYS": -0.12564173053364464,
+  "sector_std_infrequent_sklearn": -0.6703772228220656,
+  "status_Ongoing": 0.019225556893733814
+ },
+ "datasets": {
+  "common_phase6_corrected.csv": "62b8682e77cf28d1823ef93fffcbf5d9222806552cb399e3b96c91fa0aa93114"
+ },
+ "random_seed": 42,
+ "library_versions": {
+  "python": "3.11.15",
+  "xgboost": "3.2.0",
+  "scikit_learn": "1.8.0",
+  "pandas": "3.0.2",
+  "numpy": "2.4.4",
+  "joblib": "1.5.3",
+  "shap": "0.51.0"
+ },
+ "model_sha256": "5c5cff2a68e20d1e0e43aaef1a4082cb2eb0dc4a41875935981d5a499bda6702",
+ "shap_support": "coefficients / shap.LinearExplainer",
+ "official_prediction": false,
+ "enabled": true,
+ "route": "benchmark"
+}

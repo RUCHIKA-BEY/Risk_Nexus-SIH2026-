@@ -1,0 +1,12 @@
+{
+ "model_id": "compound_cuf_lr",
+ "scoring_key": {
+  "project_id": "220100184",
+  "report_month": "2023-01-01"
+ },
+ "probability": 0.9817292677024726,
+ "threshold": 0.75,
+ "predicted_class": 1,
+ "y_true": 0,
+ "tolerance": 1e-06
+}

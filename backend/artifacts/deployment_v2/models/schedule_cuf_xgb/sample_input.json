@@ -1,0 +1,33 @@
+{
+ "model_id": "schedule_cuf_xgb",
+ "experiment": "CUF",
+ "feature_function": null,
+ "scoring_key": {
+  "project_id": "220100184",
+  "report_month": "2023-01-01"
+ },
+ "feature_rows": [
+  {
+   "project_id": "220100184",
+   "report_month": "2023-01-01",
+   "original_cost": 410.08,
+   "current_forecast_cost": 860.41,
+   "cumulative_expenditure": 880.11,
+   "cumulative_to_original_ratio": 2.146190987124464,
+   "forecast_to_original_ratio": 2.098151580179477,
+   "physical_progress_pct": null,
+   "physical_progress_available": 0,
+   "planned_duration_months": -47.0,
+   "reported_delay_months": 53.0,
+   "exp_change_1m": null,
+   "progress_change_1m": null,
+   "progress_rate": null,
+   "n_cost_revisions_to_date": 0,
+   "n_schedule_revisions_to_date": 0,
+   "planned_completion_available": 1,
+   "months_from_original_commissioning": 47.0,
+   "sector_std": "RAILWAYS"
+  }
+ ],
+ "note": "no feature engineering; pass ordered_raw_input_features to pipeline.predict_proba"
+}

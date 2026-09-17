@@ -1,0 +1,153 @@
+{
+ "model_id": "compound_e1_xgb",
+ "model_family": "XGBoost",
+ "model_type": "sklearn Pipeline[ColumnTransformer -> XGBClassifier]",
+ "target": "compound",
+ "target_column": "compound_event_6m",
+ "experiment": "E1 TVM",
+ "experiment_code": "E1",
+ "dashboard_role": "exploratory TVM effect",
+ "benchmark_only": false,
+ "deployment_ready": true,
+ "feature_engineering_function": "feature_engineering.attach_tvm_features",
+ "required_history": "TVM as-of-T values (project history from panel entry to T)",
+ "preprocessing": {
+  "numeric": "SimpleImputer(median, add_indicator=True) fit on train",
+  "categorical": "SimpleImputer(constant 'UNKNOWN') -> OneHotEncoder(handle_unknown='ignore', min_frequency=20) fit on train",
+  "remainder": "drop"
+ },
+ "estimator_params": {
+  "n_estimators": 300,
+  "max_depth": 3,
+  "learning_rate": 0.03,
+  "min_child_weight": 20,
+  "subsample": 0.7,
+  "colsample_bytree": 0.6,
+  "gamma": 2,
+  "reg_alpha": 1,
+  "reg_lambda": 20,
+  "objective": "binary:logistic",
+  "eval_metric": "aucpr",
+  "tree_method": "hist",
+  "random_state": 42,
+  "n_jobs": -1,
+  "scale_pos_weight": 7.961290322580645
+ },
+ "threshold": 0.91,
+ "threshold_rule": "max F1 on Split-A VALIDATION over np.linspace(0.01,0.99,197)",
+ "validation_f1_at_threshold": 0.5783132530120482,
+ "split": "split_a",
+ "counts": {
+  "train": {
+   "rows": 2778,
+   "projects": 371,
+   "positives": 310,
+   "prevalence": 0.11159107271418287
+  },
+  "validation": {
+   "rows": 1320,
+   "projects": 95,
+   "positives": 43,
+   "prevalence": 0.03257575757575758
+  },
+  "test": {
+   "rows": 3374,
+   "projects": 174,
+   "positives": 107,
+   "prevalence": 0.03171310017783047
+  }
+ },
+ "validation_metrics": {
+  "pr_auc": 0.5385884327473636,
+  "roc_auc": 0.9613374369434176,
+  "brier": 0.05940799042582512,
+  "precision": 0.6,
+  "recall": 0.5581395348837209,
+  "f1": 0.5783132530120482,
+  "tp": 24,
+  "fp": 16,
+  "tn": 1261,
+  "fn": 19,
+  "alerts": 40,
+  "alert_rate": 0.030303030303030304
+ },
+ "test_metrics": {
+  "pr_auc": 0.3379101998892343,
+  "roc_auc": 0.9194937194087578,
+  "brier": 0.06345441937446594,
+  "precision": 0.4318181818181818,
+  "recall": 0.5327102803738317,
+  "f1": 0.4769874476987448,
+  "tp": 57,
+  "fp": 75,
+  "tn": 3192,
+  "fn": 50,
+  "alerts": 132,
+  "alert_rate": 0.03912270302311796
+ },
+ "split_b_diagnostic": {
+  "counts": {
+   "train": {
+    "rows": 29927,
+    "projects": 2309,
+    "positives": 400,
+    "prevalence": 0.013365856918501687
+   },
+   "validation": {
+    "rows": 1941,
+    "projects": 1741,
+    "positives": 43,
+    "prevalence": 0.02215352910870685
+   },
+   "test": {
+    "rows": 153,
+    "projects": 78,
+    "positives": 17,
+    "prevalence": 0.1111111111111111
+   }
+  },
+  "validation_threshold": 0.81,
+  "test": {
+   "pr_auc": 0.9113939036539656,
+   "roc_auc": 0.9874567474048442,
+   "brier": 0.0315154530107975,
+   "precision": 1.0,
+   "recall": 0.6470588235294118,
+   "f1": 0.7857142857142857,
+   "tp": 11,
+   "fp": 0,
+   "tn": 136,
+   "fn": 6,
+   "alerts": 11,
+   "alert_rate": 0.0718954248366013
+  },
+  "note": "secondary diagnostic only (small, prevalence-shifted test); not a deployed model"
+ },
+ "datasets": {
+  "enhanced_phase6_corrected.csv": "e2aa83f3835b1f3b21633715cdc0441ac10a174a2e6832f623c00f464305458c",
+  "tvm_master_CORRECTED.csv": "8a2968124bebbd224fc3c3f1aeae1223ef434297c0e7e054bdbf8e37c6005fb4"
+ },
+ "random_seed": 42,
+ "library_versions": {
+  "python": "3.11.15",
+  "xgboost": "3.2.0",
+  "scikit_learn": "1.8.0",
+  "pandas": "3.0.2",
+  "numpy": "2.4.4",
+  "joblib": "1.5.3",
+  "shap": "0.51.0"
+ },
+ "model_sha256": "d473e7f2e80c96de15975d82c302a78746378de2de39901a5f6a814dc34adec7",
+ "shap_support": "TreeExplainer on classifier with preprocessor.transform(X)",
+ "official_prediction": false,
+ "enabled": true,
+ "route": "analysis",
+ "ablation_vs_cuf_control": {
+  "test_pr_auc_delta": 0.01,
+  "bootstrap_95_ci": [
+   -0.0544,
+   0.0499
+  ],
+  "verdict": "no reliable difference"
+ }
+}

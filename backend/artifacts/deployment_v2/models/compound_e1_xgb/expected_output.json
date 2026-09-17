@@ -1,0 +1,12 @@
+{
+ "model_id": "compound_e1_xgb",
+ "scoring_key": {
+  "project_id": "220100184",
+  "report_month": "2023-01-01"
+ },
+ "probability": 0.877390444278717,
+ "threshold": 0.91,
+ "predicted_class": 0,
+ "y_true": 0,
+ "tolerance": 1e-06
+}

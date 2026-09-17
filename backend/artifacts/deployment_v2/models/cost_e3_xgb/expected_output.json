@@ -1,0 +1,12 @@
+{
+ "model_id": "cost_e3_xgb",
+ "scoring_key": {
+  "project_id": "220100184",
+  "report_month": "2023-01-01"
+ },
+ "probability": 0.9130235314369202,
+ "threshold": 0.8200000000000001,
+ "predicted_class": 1,
+ "y_true": 0,
+ "tolerance": 1e-06
+}

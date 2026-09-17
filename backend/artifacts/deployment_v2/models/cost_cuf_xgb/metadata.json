@@ -1,0 +1,107 @@
+{
+ "model_id": "cost_cuf_xgb",
+ "model_family": "XGBoost",
+ "model_type": "sklearn Pipeline[ColumnTransformer -> XGBClassifier]",
+ "target": "cost",
+ "target_column": "cost_event_6m",
+ "experiment": "CUF-only control (corrected 17 CUF)",
+ "experiment_code": "CUF",
+ "dashboard_role": "official primary cost prediction",
+ "official_prediction": true,
+ "enabled": true,
+ "benchmark_only": false,
+ "deployment_ready": true,
+ "selection_basis": "CUF-control ablation (ablation_evidence/ablation_report.md): no experiment feature reliably improved Split-A test PR-AUC",
+ "feature_engineering_function": null,
+ "required_history": "none (CUF columns at T)",
+ "preprocessing": {
+  "numeric": "SimpleImputer(median, add_indicator=True) fit on train",
+  "categorical": "SimpleImputer(constant 'UNKNOWN') -> OneHotEncoder(handle_unknown='ignore', min_frequency=20) fit on train",
+  "remainder": "drop"
+ },
+ "estimator_params": {
+  "n_estimators": 300,
+  "max_depth": 3,
+  "learning_rate": 0.03,
+  "min_child_weight": 20,
+  "subsample": 0.7,
+  "colsample_bytree": 0.6,
+  "gamma": 2,
+  "reg_alpha": 1,
+  "reg_lambda": 20,
+  "objective": "binary:logistic",
+  "eval_metric": "aucpr",
+  "tree_method": "hist",
+  "random_state": 42,
+  "n_jobs": -1,
+  "scale_pos_weight": 6.569920844327177
+ },
+ "threshold": 0.88,
+ "threshold_grid_points": 99,
+ "threshold_rule": "max F1 on Split-A VALIDATION over np.linspace(0.01,0.99,99)",
+ "validation_f1_at_threshold": 0.5306122448979592,
+ "split": "split_a",
+ "counts": {
+  "train": {
+   "rows": 2869,
+   "projects": 385,
+   "positives": 379,
+   "prevalence": 0.1321017776228651
+  },
+  "validation": {
+   "rows": 1385,
+   "projects": 95,
+   "positives": 58,
+   "prevalence": 0.04187725631768953
+  },
+  "test": {
+   "rows": 3460,
+   "projects": 174,
+   "positives": 167,
+   "prevalence": 0.04826589595375722
+  }
+ },
+ "validation_metrics": {
+  "pr_auc": 0.48631225322693833,
+  "roc_auc": 0.9570004937245018,
+  "brier": 0.07744079828262329,
+  "precision": 0.43820224719101125,
+  "recall": 0.6724137931034483,
+  "f1": 0.5306122448979592,
+  "tp": 39,
+  "fp": 50,
+  "tn": 1277,
+  "fn": 19,
+  "alerts": 89,
+  "alert_rate": 0.06425992779783393
+ },
+ "test_metrics": {
+  "pr_auc": 0.31920904146105517,
+  "roc_auc": 0.8464807403110572,
+  "brier": 0.07543204724788666,
+  "precision": 0.39436619718309857,
+  "recall": 0.5029940119760479,
+  "f1": 0.4421052631578947,
+  "tp": 84,
+  "fp": 129,
+  "tn": 3164,
+  "fn": 83,
+  "alerts": 213,
+  "alert_rate": 0.061560693641618494
+ },
+ "datasets": {
+  "enhanced_phase6_corrected.csv": "e2aa83f3835b1f3b21633715cdc0441ac10a174a2e6832f623c00f464305458c"
+ },
+ "random_seed": 42,
+ "library_versions": {
+  "python": "3.11.15",
+  "xgboost": "3.2.0",
+  "scikit_learn": "1.8.0",
+  "pandas": "3.0.2",
+  "numpy": "2.4.4",
+  "joblib": "1.5.3",
+  "shap": "0.51.0"
+ },
+ "model_sha256": "ec8cce11d4431ad44954f1e5353ed5102e02de221e9e2de2efab437ca4638c55",
+ "shap_support": "TreeExplainer on classifier with preprocessor.transform(X)"
+}

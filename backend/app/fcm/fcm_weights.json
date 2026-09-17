@@ -1,0 +1,118 @@
+{
+  "nodes": [
+    "physical_progress_gap",
+    "expenditure_progress_gap",
+    "reported_delay_pressure",
+    "cost_revision_pressure",
+    "schedule_revision_pressure",
+    "forecast_cost_pressure",
+    "schedule_pressure",
+    "cost_pressure",
+    "intervention_priority"
+  ],
+  "edges": [
+    {
+      "source": "physical_progress_gap",
+      "target": "schedule_pressure",
+      "weight": 0.7,
+      "basis": "Expert: projects with large physical progress gaps typically face schedule overruns"
+    },
+    {
+      "source": "physical_progress_gap",
+      "target": "cost_pressure",
+      "weight": 0.5,
+      "basis": "Expert: stalled physical progress leads to idle resource costs"
+    },
+    {
+      "source": "expenditure_progress_gap",
+      "target": "cost_pressure",
+      "weight": 0.8,
+      "basis": "Expert: spending outpacing physical progress is the primary cost overrun signal"
+    },
+    {
+      "source": "expenditure_progress_gap",
+      "target": "schedule_pressure",
+      "weight": 0.4,
+      "basis": "Expert: expenditure-progress misalignment often co-occurs with schedule problems"
+    },
+    {
+      "source": "reported_delay_pressure",
+      "target": "schedule_pressure",
+      "weight": 0.8,
+      "basis": "Expert: reported delay is directly linked to schedule pressure"
+    },
+    {
+      "source": "reported_delay_pressure",
+      "target": "cost_pressure",
+      "weight": 0.5,
+      "basis": "Expert: delays increase holding and idling costs"
+    },
+    {
+      "source": "cost_revision_pressure",
+      "target": "cost_pressure",
+      "weight": 0.9,
+      "basis": "Expert: repeated cost revisions are a leading indicator of budget overrun"
+    },
+    {
+      "source": "cost_revision_pressure",
+      "target": "intervention_priority",
+      "weight": 0.6,
+      "basis": "Expert: high revision counts trigger review protocols"
+    },
+    {
+      "source": "schedule_revision_pressure",
+      "target": "schedule_pressure",
+      "weight": 0.9,
+      "basis": "Expert: repeated schedule revisions directly reflect schedule instability"
+    },
+    {
+      "source": "schedule_revision_pressure",
+      "target": "intervention_priority",
+      "weight": 0.6,
+      "basis": "Expert: repeated schedule revisions signal persistent problems requiring intervention"
+    },
+    {
+      "source": "forecast_cost_pressure",
+      "target": "cost_pressure",
+      "weight": 0.75,
+      "basis": "Expert: forecast cost exceeding original cost is a direct cost overrun precursor"
+    },
+    {
+      "source": "forecast_cost_pressure",
+      "target": "cost_revision_pressure",
+      "weight": 0.5,
+      "basis": "Expert: forecast cost inflation often precipitates formal cost revisions"
+    },
+    {
+      "source": "schedule_pressure",
+      "target": "intervention_priority",
+      "weight": 0.7,
+      "basis": "Expert: projects under schedule pressure require prioritised review"
+    },
+    {
+      "source": "cost_pressure",
+      "target": "intervention_priority",
+      "weight": 0.7,
+      "basis": "Expert: projects under cost pressure require prioritised review"
+    },
+    {
+      "source": "schedule_pressure",
+      "target": "cost_pressure",
+      "weight": 0.4,
+      "basis": "Expert: schedule delays create cost escalation through prolonged resource deployment"
+    },
+    {
+      "source": "cost_pressure",
+      "target": "schedule_pressure",
+      "weight": 0.3,
+      "basis": "Expert: budget pressures can cause contractors to reduce staffing, slowing progress"
+    }
+  ],
+  "metadata": {
+    "basis": "Expert-defined demonstration weights for SIH26103 infrastructure monitoring use case",
+    "disclaimer": "All weights are expert-defined assumptions for demonstration purposes only. They have not been validated against empirical data. FCM outputs are scenario simulations, not official model predictions or causal estimates.",
+    "weight_range": "[-1, +1]",
+    "activation": "sigmoid",
+    "update_rule": "A_next = sigmoid(A_current + W.T @ A_current)"
+  }
+}

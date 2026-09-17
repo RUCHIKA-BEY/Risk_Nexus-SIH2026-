@@ -1,0 +1,152 @@
+{
+ "model_id": "cost_e4_xgb",
+ "model_family": "XGBoost",
+ "model_type": "sklearn Pipeline[ColumnTransformer -> XGBClassifier]",
+ "target": "cost",
+ "target_column": "cost_event_6m",
+ "experiment": "E4 cost-escalation velocity",
+ "experiment_code": "E4",
+ "dashboard_role": "exploratory cost-velocity effect",
+ "benchmark_only": false,
+ "deployment_ready": true,
+ "feature_engineering_function": "feature_engineering.add_e4_cost_escalation_velocity",
+ "required_history": "previous observed row of the same project",
+ "preprocessing": {
+  "numeric": "SimpleImputer(median, add_indicator=True) fit on train",
+  "categorical": "SimpleImputer(constant 'UNKNOWN') -> OneHotEncoder(handle_unknown='ignore', min_frequency=20) fit on train",
+  "remainder": "drop"
+ },
+ "estimator_params": {
+  "n_estimators": 300,
+  "max_depth": 3,
+  "learning_rate": 0.03,
+  "min_child_weight": 20,
+  "subsample": 0.7,
+  "colsample_bytree": 0.6,
+  "gamma": 2,
+  "reg_alpha": 1,
+  "reg_lambda": 20,
+  "objective": "binary:logistic",
+  "eval_metric": "aucpr",
+  "tree_method": "hist",
+  "random_state": 42,
+  "n_jobs": -1,
+  "scale_pos_weight": 6.569920844327177
+ },
+ "threshold": 0.88,
+ "threshold_rule": "max F1 on Split-A VALIDATION over np.linspace(0.01,0.99,99)",
+ "validation_f1_at_threshold": 0.5333333333333333,
+ "split": "split_a",
+ "counts": {
+  "train": {
+   "rows": 2869,
+   "projects": 385,
+   "positives": 379,
+   "prevalence": 0.1321017776228651
+  },
+  "validation": {
+   "rows": 1385,
+   "projects": 95,
+   "positives": 58,
+   "prevalence": 0.04187725631768953
+  },
+  "test": {
+   "rows": 3460,
+   "projects": 174,
+   "positives": 167,
+   "prevalence": 0.04826589595375722
+  }
+ },
+ "validation_metrics": {
+  "pr_auc": 0.5025076791897042,
+  "roc_auc": 0.9555907803445677,
+  "brier": 0.07924236357212067,
+  "precision": 0.43478260869565216,
+  "recall": 0.6896551724137931,
+  "f1": 0.5333333333333333,
+  "tp": 40,
+  "fp": 52,
+  "tn": 1275,
+  "fn": 18,
+  "alerts": 92,
+  "alert_rate": 0.0664259927797834
+ },
+ "test_metrics": {
+  "pr_auc": 0.33205051305544525,
+  "roc_auc": 0.8454869792755818,
+  "brier": 0.07591411471366882,
+  "precision": 0.38009049773755654,
+  "recall": 0.5029940119760479,
+  "f1": 0.4329896907216495,
+  "tp": 84,
+  "fp": 137,
+  "tn": 3156,
+  "fn": 83,
+  "alerts": 221,
+  "alert_rate": 0.06387283236994219
+ },
+ "split_b_diagnostic": {
+  "counts": {
+   "train": {
+    "rows": 30142,
+    "projects": 2323,
+    "positives": 524,
+    "prevalence": 0.01738438059850043
+   },
+   "validation": {
+    "rows": 1968,
+    "projects": 1756,
+    "positives": 61,
+    "prevalence": 0.030995934959349592
+   },
+   "test": {
+    "rows": 153,
+    "projects": 78,
+    "positives": 19,
+    "prevalence": 0.12418300653594772
+   }
+  },
+  "validation_threshold": 0.76,
+  "test": {
+   "pr_auc": 0.8460131029225475,
+   "roc_auc": 0.9732914375490965,
+   "brier": 0.08155257999897003,
+   "precision": 0.7142857142857143,
+   "recall": 0.7894736842105263,
+   "f1": 0.75,
+   "tp": 15,
+   "fp": 6,
+   "tn": 128,
+   "fn": 4,
+   "alerts": 21,
+   "alert_rate": 0.13725490196078433
+  },
+  "note": "secondary diagnostic only (small, prevalence-shifted test); not a deployed model"
+ },
+ "datasets": {
+  "enhanced_phase6_corrected.csv": "e2aa83f3835b1f3b21633715cdc0441ac10a174a2e6832f623c00f464305458c"
+ },
+ "random_seed": 42,
+ "library_versions": {
+  "python": "3.11.15",
+  "xgboost": "3.2.0",
+  "scikit_learn": "1.8.0",
+  "pandas": "3.0.2",
+  "numpy": "2.4.4",
+  "joblib": "1.5.3",
+  "shap": "0.51.0"
+ },
+ "model_sha256": "2c6ddcf6fdd5318a49abc14920e7ccbfc0e2a34e03c456931836fd0711a06be0",
+ "shap_support": "TreeExplainer on classifier with preprocessor.transform(X)",
+ "official_prediction": false,
+ "enabled": true,
+ "route": "analysis",
+ "ablation_vs_cuf_control": {
+  "test_pr_auc_delta": 0.0128,
+  "bootstrap_95_ci": [
+   -0.0001,
+   0.0367
+  ],
+  "verdict": "no reliable difference"
+ }
+}

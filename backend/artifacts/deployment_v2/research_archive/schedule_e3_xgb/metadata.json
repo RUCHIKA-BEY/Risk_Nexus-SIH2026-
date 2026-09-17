@@ -1,0 +1,156 @@
+{
+ "model_id": "schedule_e3_xgb",
+ "model_family": "XGBoost",
+ "model_type": "sklearn Pipeline[ColumnTransformer -> XGBClassifier]",
+ "target": "schedule",
+ "target_column": "schedule_event_6m",
+ "experiment": "E3 schedule-slippage velocity",
+ "experiment_code": "E3",
+ "dashboard_role": "research archive only",
+ "benchmark_only": false,
+ "deployment_ready": false,
+ "feature_engineering_function": "feature_engineering.add_e3_schedule_slippage_velocity",
+ "required_history": "previous observed row of the same project",
+ "preprocessing": {
+  "numeric": "SimpleImputer(median, add_indicator=True) fit on train",
+  "categorical": "SimpleImputer(constant 'UNKNOWN') -> OneHotEncoder(handle_unknown='ignore', min_frequency=20) fit on train",
+  "remainder": "drop"
+ },
+ "estimator_params": {
+  "n_estimators": 300,
+  "max_depth": 3,
+  "learning_rate": 0.03,
+  "min_child_weight": 20,
+  "subsample": 0.7,
+  "colsample_bytree": 0.6,
+  "gamma": 2,
+  "reg_alpha": 1,
+  "reg_lambda": 20,
+  "objective": "binary:logistic",
+  "eval_metric": "aucpr",
+  "tree_method": "hist",
+  "random_state": 42,
+  "n_jobs": -1,
+  "scale_pos_weight": 1.1686182669789227
+ },
+ "threshold": 0.65,
+ "threshold_rule": "max F1 on Split-A VALIDATION over np.linspace(0.01,0.99,99)",
+ "validation_f1_at_threshold": 0.45660881174899864,
+ "split": "split_a",
+ "counts": {
+  "train": {
+   "rows": 2778,
+   "projects": 371,
+   "positives": 1281,
+   "prevalence": 0.4611231101511879
+  },
+  "validation": {
+   "rows": 1320,
+   "projects": 95,
+   "positives": 217,
+   "prevalence": 0.1643939393939394
+  },
+  "test": {
+   "rows": 3374,
+   "projects": 174,
+   "positives": 697,
+   "prevalence": 0.20657972732661528
+  }
+ },
+ "validation_metrics": {
+  "pr_auc": 0.3584788898175423,
+  "roc_auc": 0.8011100851886976,
+  "brier": 0.2218017876148224,
+  "precision": 0.32142857142857145,
+  "recall": 0.7880184331797235,
+  "f1": 0.45660881174899864,
+  "tp": 171,
+  "fp": 361,
+  "tn": 742,
+  "fn": 46,
+  "alerts": 532,
+  "alert_rate": 0.403030303030303
+ },
+ "test_metrics": {
+  "pr_auc": 0.42638485646850405,
+  "roc_auc": 0.7825903104665975,
+  "brier": 0.268013596534729,
+  "precision": 0.34464902186421176,
+  "recall": 0.8593974175035868,
+  "f1": 0.4919917864476386,
+  "tp": 599,
+  "fp": 1139,
+  "tn": 1538,
+  "fn": 98,
+  "alerts": 1738,
+  "alert_rate": 0.5151155898043864
+ },
+ "split_b_diagnostic": {
+  "counts": {
+   "train": {
+    "rows": 29927,
+    "projects": 2309,
+    "positives": 1797,
+    "prevalence": 0.06004611220636883
+   },
+   "validation": {
+    "rows": 1941,
+    "projects": 1741,
+    "positives": 284,
+    "prevalence": 0.14631633178773829
+   },
+   "test": {
+    "rows": 153,
+    "projects": 78,
+    "positives": 114,
+    "prevalence": 0.7450980392156863
+   }
+  },
+  "validation_threshold": 0.7000000000000001,
+  "test": {
+   "pr_auc": 0.9869750877851926,
+   "roc_auc": 0.9691857849752586,
+   "brier": 0.0633905827999115,
+   "precision": 0.9795918367346939,
+   "recall": 0.8421052631578947,
+   "f1": 0.9056603773584906,
+   "tp": 96,
+   "fp": 2,
+   "tn": 37,
+   "fn": 18,
+   "alerts": 98,
+   "alert_rate": 0.6405228758169934
+  },
+  "note": "secondary diagnostic only (small, prevalence-shifted test); not a deployed model"
+ },
+ "datasets": {
+  "enhanced_phase6_corrected.csv": "e2aa83f3835b1f3b21633715cdc0441ac10a174a2e6832f623c00f464305458c"
+ },
+ "random_seed": 42,
+ "library_versions": {
+  "python": "3.11.15",
+  "xgboost": "3.2.0",
+  "scikit_learn": "1.8.0",
+  "pandas": "3.0.2",
+  "numpy": "2.4.4",
+  "joblib": "1.5.3",
+  "shap": "0.51.0"
+ },
+ "model_sha256": "b73482af1dd1d647de4068fdcf3d78dcb4d11484ef8269f510da1b2c9f774766",
+ "shap_support": "TreeExplainer on classifier with preprocessor.transform(X)",
+ "enabled": false,
+ "official_prediction": false,
+ "status": "rejected_by_ablation",
+ "reason": "reliably worse than schedule CUF control",
+ "PR_AUC_delta": -0.034,
+ "bootstrap_95_CI": [
+  -0.052,
+  -0.013
+ ],
+ "exact_values": {
+  "pr_auc_delta": -0.033480642741268496,
+  "ci95_low": -0.05208417354568732,
+  "ci95_high": -0.013393675741327092
+ },
+ "route": null
+}
