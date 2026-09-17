@@ -70,7 +70,15 @@ function App() {
               <Route index element={<Navigate to="risk" replace />} />
               <Route path="risk" element={<RiskAssessment />} />
               <Route path="trajectory" element={<RiskTrajectory />} />
-              <Route path="progress" element={<RiskAssessment />} />
+              <Route path="milestones" element={<RiskTrajectory />} />
+              <Route path="map" element={<ProjectMapView />} />
+            </Route>
+
+            {/* Support /projects/all/:id alias */}
+            <Route path="all/:id" element={<ChildProjectDashboard />}>
+              <Route index element={<Navigate to="risk" replace />} />
+              <Route path="risk" element={<RiskAssessment />} />
+              <Route path="trajectory" element={<RiskTrajectory />} />
               <Route path="milestones" element={<RiskTrajectory />} />
               <Route path="map" element={<ProjectMapView />} />
             </Route>

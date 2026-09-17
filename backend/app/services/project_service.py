@@ -332,6 +332,41 @@ def get_project_timeline(project_id: str) -> Optional[ProjectTimelineResponse]:
     return ProjectTimelineResponse(project_id=project_id, timeline=points)
 
 
+def get_project_trajectory(project_id: str) -> Optional[TrajectoryResponse]:
+    """Computes historical risk trajectory for each monthly cycle using official models."""
+    from app.services.model_service import score_row, classify, OFFICIAL_XGB_FEATURES
+    from app.services.feature_service import build_feature_dict
+    from app.schemas import TrajectoryResponse, TrajectoryPoint
+
+    rows = get_project_rows(project_id)
+    if rows.empty:
+        return None
+
+    points = []
+    for _, row in rows.iterrows():
+        feat_dict = build_feature_dict(row, OFFICIAL_XGB_FEATURES)
+        try:
+            c_score = score_row("cost_cuf_xgb", feat_dict)
+            s_score = score_row("schedule_cuf_xgb", feat_dict)
+            comp_score = score_row("compound_cuf_xgb", feat_dict)
+        except Exception:
+            c_score, s_score, comp_score = None, None, None
+
+        points.append(
+            TrajectoryPoint(
+                report_month=row["report_month"].strftime("%Y-%m-%d"),
+                cost_risk_score=round(c_score, 4) if c_score is not None else None,
+                schedule_risk_score=round(s_score, 4) if s_score is not None else None,
+                compound_risk_score=round(comp_score, 4) if comp_score is not None else None,
+                cost_risk_class=classify(c_score, 0.88) if c_score is not None else None,
+                schedule_risk_class=classify(s_score, 0.63) if s_score is not None else None,
+                compound_risk_class=classify(comp_score, 0.885) if comp_score is not None else None,
+            )
+        )
+
+    return TrajectoryResponse(project_id=project_id, points=points)
+
+
 def get_portfolio_metrics() -> PortfolioMetricsResponse:
     sdf = get_summary_df()
     total_projects = len(sdf)
