@@ -1,4 +1,6 @@
-# RiskNexus Frontend (PAIMANA Dashboard)
+# RiskNexus 
+
+Frontend (PAIMANA Dashboard)
 
 This repository contains the frontend codebase for the **PAIMANA Infrastructure & Project Monitoring Dashboard**, representing the Ministry of Statistics and Programme Implementation (MoSPI). 
 
