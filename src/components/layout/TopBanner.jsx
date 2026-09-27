@@ -33,18 +33,16 @@ export default function TopBanner() {
       {/* Main Branding Header */}
       <div className="w-full bg-white px-6 py-3 flex justify-between items-center border-b border-slate-200">
         
-        {/* Left Section (Logos & Text) */}
-        <div className="flex items-center space-x-6">
-          {/* Logo 1: State Emblem & Ministry Text */}
-          <img src="/images/emblem.png" alt="Ministry of Statistics and Programme Implementation" className="h-12 object-contain" />
-
-          <div className="h-10 w-px bg-slate-200" />
-
-          {/* Logo 2: MoSPI Logo */}
-          <img src="/images/mospi_logo.png" alt="MoSPI Logo" className="h-12 object-contain" />
+        {/* Left Section — RiskNexus Logo */}
+        <div className="flex items-center shrink-0">
+          <img
+            src="/images/risknexus_logo.png"
+            alt="RiskNexus — Project Risk Intelligence for a Resilient India"
+            className="h-11 max-w-[220px] sm:max-w-[280px] md:max-w-none object-contain"
+          />
         </div>
 
-        {/* Right Section (Actions & PAIMANA Logo) */}
+        {/* Right Section (Actions & User Profile) */}
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-3">
             <button className="px-5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-400 text-white text-xs font-bold tracking-wide shadow-sm hover:from-orange-600 hover:to-orange-500 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
@@ -67,11 +65,6 @@ export default function TopBanner() {
               <span className="text-xs text-gray-500 leading-tight">Project Analyst</span>
             </div>
           </div>
-
-          <div className="h-8 w-px bg-slate-200" />
-
-          {/* PAIMANA Logo */}
-          <img src="/images/paimana_logo.png" alt="PAIMANA Logo" className="h-8 object-contain" />
         </div>
 
       </div>
