@@ -189,5 +189,10 @@ def get_actual_outcome_route(project_id: str, as_of: Optional[str] = Query(defau
         as_of = latest_dt.strftime("%Y-%m-%d")
 
     from app.services.outcome_service import get_actual_outcome
-    result = get_actual_outcome(project_id, as_of, predicted_classes={})
-    return result
+    from app.services import risk_integration_service as svc
+    # Predicted classes from the official frozen XGBoost models at this as_of,
+    # using the registry thresholds (cost 0.25, schedule 0.20, compound 0.20).
+    # Outcomes stay out of every prediction response; this endpoint only compares.
+    ml = svc.predict_block(svc.load_row(project_id, as_of), "official_production")
+    predicted = {t: ml[t]["risk_level"] for t in svc.TARGETS}
+    return get_actual_outcome(project_id, as_of, predicted_classes=predicted)

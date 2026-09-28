@@ -109,10 +109,15 @@
     }
   ],
   "metadata": {
-    "basis": "Expert-defined demonstration weights for SIH26103 infrastructure monitoring use case",
-    "disclaimer": "All weights are expert-defined assumptions for demonstration purposes only. They have not been validated against empirical data. FCM outputs are scenario simulations, not official model predictions or causal estimates.",
+    "review_status": "DRAFT_NOT_DOMAIN_APPROVED",
+    "approved_by": null,
+    "approved_on": null,
+    "basis": "Draft demonstration weights awaiting documented domain-expert approval",
+    "disclaimer": "Weights and input normalisation rules are unvalidated draft assumptions. Outputs are scenario simulations, not official predictions, probabilities, or causal estimates.",
     "weight_range": "[-1, +1]",
     "activation": "sigmoid",
-    "update_rule": "A_next = sigmoid(A_current + W.T @ A_current)"
+    "damping": 0.5,
+    "input_nodes_are_clamped": true,
+    "update_rule": "candidate = sigmoid(logit(initial_state) + W.T @ A_current); A_next = (1-damping)*A_current + damping*candidate"
   }
 }

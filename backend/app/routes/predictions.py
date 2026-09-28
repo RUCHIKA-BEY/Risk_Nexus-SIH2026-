@@ -32,18 +32,6 @@ from app.services.shap_service import compute_shap
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# LR benchmark features (same as LEGACY_LR_FEATURES in feature_engineering.py)
-LEGACY_LR_FEATURES = [
-    "sector_std", "status", "original_cost", "planned_duration_months",
-    "cumulative_expenditure", "cumulative_to_original_ratio",
-    "elapsed_planned_ratio", "planned_remaining_months", "project_age_months",
-    "exp_change_1m", "exp_change_3m", "exp_slope_3m",
-    "n_cost_revisions_to_date", "n_schedule_revisions_to_date",
-    "expenditure_available", "planned_completion_available",
-    "sector_available", "agency_available", "state_available",
-]
-
-
 def _get_project_row_data(project_id: str, as_of: str):
     rows = get_project_rows_as_of(project_id, as_of)
     if rows.empty:
@@ -57,8 +45,7 @@ def _get_project_row_data(project_id: str, as_of: str):
 @router.post("/predict/official", response_model=OfficialPredictionResponse, tags=["Predictions"])
 def predict_official(req: PredictRequest):
     """
-    Official production predictions from cost_cuf_xgb, schedule_cuf_xgb, compound_cuf_xgb.
-    Uses only the 17-feature CUF set. No exploratory or benchmark models involved.
+    Frozen corrected Phase 6 XGBoost predictions. No benchmark or exploratory model is involved.
     """
     row, prior_rows = _get_project_row_data(req.project_id, req.as_of)
     feature_dict = build_feature_dict(row, OFFICIAL_XGB_FEATURES)
@@ -102,7 +89,8 @@ def predict_official(req: PredictRequest):
 @router.post("/predict/analysis", response_model=AnalysisPredictionResponse, tags=["Predictions"])
 def predict_analysis(req: PredictRequest):
     """
-    Exploratory analysis: cost_e3_xgb (E3), cost_e4_xgb (E4), compound_e1_xgb (E1).
+    Exploratory analysis route. The frozen Phase 6 registry has NO analysis models
+    (analysis_route is empty), so this returns an empty list. Kept for the existing frontend.
     official_prediction=false. Must not replace or be blended with official results.
     """
     row, prior_rows = _get_project_row_data(req.project_id, req.as_of)
@@ -177,11 +165,11 @@ def predict_analysis(req: PredictRequest):
 @router.post("/predict/benchmark", response_model=BenchmarkPredictionResponse, tags=["Predictions"])
 def predict_benchmark(req: PredictRequest):
     """
-    Legacy LR benchmark predictions. benchmark_only=true; may_replace_xgboost_predictions=false.
-    Uses panel-tenure features (project_age_months etc.) — see panel_tenure_warning.
+    Frozen corrected Phase 6 LR benchmark predictions.
+    benchmark_only=true; may_replace_xgboost_predictions=false.
     """
     row, _ = _get_project_row_data(req.project_id, req.as_of)
-    feature_dict = build_feature_dict(row, LEGACY_LR_FEATURES)
+    feature_dict = build_feature_dict(row, get_model_config("cost_cuf_lr")["ordered_raw_input_features"])
     warnings = check_data_quality(row, is_official_xgb=False)
 
     benchmark_predictions: list[SingleModelResult] = []
@@ -190,7 +178,7 @@ def predict_benchmark(req: PredictRequest):
     for model_id in get_benchmark_model_ids():
         cfg = get_model_config(model_id)
         threshold = cfg["threshold"]
-        ordered_features = cfg.get("ordered_raw_input_features", LEGACY_LR_FEATURES)
+        ordered_features = cfg["ordered_raw_input_features"]
 
         try:
             score = score_row(model_id, feature_dict)
@@ -212,11 +200,8 @@ def predict_benchmark(req: PredictRequest):
             )
         )
 
-        try:
-            pos_d, neg_d = compute_shap(model_id, feature_dict, ordered_features, n_drivers=3)
-            top_drivers[model_id] = pos_d + neg_d
-        except Exception as exc:
-            logger.warning("SHAP failed for benchmark %s: %s", model_id, exc)
+        # LR stays a benchmark. Defensible LinearSHAP requires a frozen,
+        # representative background set, which is not part of this handoff.
 
     return BenchmarkPredictionResponse(
         project_id=req.project_id,

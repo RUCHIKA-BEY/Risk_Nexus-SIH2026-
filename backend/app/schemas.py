@@ -74,8 +74,8 @@ class ProjectTimelineResponse(BaseModel):
 # ── Risk score / prediction schemas ────────────────────────────────────────────
 
 RISK_SCORE_DISCLAIMER = (
-    "Risk scores are uncalibrated model outputs and are not literal real-world probabilities. "
-    "A score of 0.81 does not mean 81% probability of overrun."
+    "Risk scores are model outputs for the next 6 months, using the locked model threshold for alerting. "
+    "They support review prioritisation and are not guarantees of a real-world outcome."
 )
 
 
@@ -136,11 +136,7 @@ class BenchmarkPredictionResponse(BaseModel):
     benchmark_predictions: list[SingleModelResult]
     top_drivers: dict[str, list[SHAPDriver]] = Field(default_factory=dict)
     data_quality_warnings: list[DataQualityWarning] = Field(default_factory=list)
-    label: str = "Original/Legacy CUF Logistic Regression Benchmark"
-    panel_tenure_warning: str = (
-        "These LR models use 'project_age_months' which measures panel tenure "
-        "(months since first observation in the monitoring dataset), NOT true project age."
-    )
+    label: str = "Frozen corrected Phase 6 Logistic Regression benchmark"
     disclaimer: str = (
         RISK_SCORE_DISCLAIMER
         + " benchmark_only=true; may_replace_xgboost_predictions=false."
@@ -343,7 +339,7 @@ class OperationalPriorityItem(BaseModel):
     status: Optional[str] = None
     as_of: Optional[str] = None
     schedule_risk_score: float
-    schedule_threshold: float = 0.63
+    schedule_threshold: float  # always the registry threshold of schedule_cuf_xgb
     priority_rank: int
     requires_immediate_review: bool
     cost_risk_score: Optional[float] = None

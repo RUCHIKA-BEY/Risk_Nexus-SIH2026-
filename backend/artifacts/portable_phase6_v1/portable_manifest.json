@@ -1,0 +1,29 @@
+[
+  {
+    "model_id": "cost_cuf_xgb",
+    "source_sha256": "1d260c90e541790464ccb1d5310e11d2207dcc81f53ab24402ca87d714891370",
+    "support_path": "artifacts/portable_phase6_v1/cost_cuf_xgb_support.joblib",
+    "support_sha256": "69542264208dcc57bc9e81f835875c6a109ff1a7f69c9c2af36ddbb24042403e",
+    "booster_path": "artifacts/portable_phase6_v1/cost_cuf_xgb.ubj",
+    "booster_sha256": "d43e6e40f529bfa1274f903c5729373a070f5119ca9a72d57bf64e5103fd8927",
+    "boosted_rounds": "400"
+  },
+  {
+    "model_id": "schedule_cuf_xgb",
+    "source_sha256": "78e3873290b57d72572bcf4c739b3cede630153551c07d9900350769e0652198",
+    "support_path": "artifacts/portable_phase6_v1/schedule_cuf_xgb_support.joblib",
+    "support_sha256": "b4ac82ef3bdb804c0c1f59f93c5a323d1f53418604616abac8bd04ef0632f203",
+    "booster_path": "artifacts/portable_phase6_v1/schedule_cuf_xgb.ubj",
+    "booster_sha256": "dff5c04e727e804ee0f08faba1a5f24024cdd26f7a718b938a5d9ad6926cf061",
+    "boosted_rounds": "400"
+  },
+  {
+    "model_id": "compound_cuf_xgb",
+    "source_sha256": "351a5bd75f76b5df178b972c19e1dfef6345b4029dbf077f8882d88e1fe58b68",
+    "support_path": "artifacts/portable_phase6_v1/compound_cuf_xgb_support.joblib",
+    "support_sha256": "c54b23fd042ea53ce860e3e3e212fa3a80bfb49ea911e79027befed14dfdc2bf",
+    "booster_path": "artifacts/portable_phase6_v1/compound_cuf_xgb.ubj",
+    "booster_sha256": "0e65322e9adf1e7d68228ed691629126cb71ab7be671c24a50c133d9c6f195df",
+    "boosted_rounds": "400"
+  }
+]

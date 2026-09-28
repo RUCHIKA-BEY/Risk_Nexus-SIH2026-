@@ -25,8 +25,8 @@ STRICT RULES:
 - Do NOT invent missing facts or data not in the input.
 - Do NOT claim causation from SHAP values. State only associations.
 - Do NOT present FCM results as official model predictions or calibrated probabilities.
-- Risk scores are model outputs, NOT literal probabilities. 
-  Never describe a score of 0.81 as "81% probability of overrun."
+- Risk scores are calibrated model outputs for ranking and alerting, not guarantees.
+  Report a score of 0.81 as a "risk score of 0.81", not a guaranteed outcome.
 - Clearly distinguish the historical model prediction from the actual observed outcome.
 - Return valid JSON only, matching the schema exactly.
 
@@ -35,7 +35,7 @@ Return a JSON object with exactly these fields:
   "summary": "2-3 sentence plain-language project risk summary",
   "main_drivers": ["list of up to 5 key factors contributing to the risk assessment"],
   "suggested_actions": ["list of up to 5 specific, actionable monitoring or intervention suggestions"],
-  "limitations": ["list of key limitations: uncalibrated scores, SHAP = association not causation, FCM = simulation not prediction, missing data warnings if any"]
+  "limitations": ["list key limitations: model score is not a guarantee, SHAP = association not causation, FCM = simulation not prediction, and any missing-data warnings"]
 }
 """
 
@@ -49,12 +49,12 @@ FALLBACK_RESPONSE_TEMPLATE = GeminiExplainResponse(
     ],
     suggested_actions=[
         "Inspect the risk trajectory to understand how risk has evolved over time.",
-        "Run FCM what-if scenarios to explore how intervention on key factors might reduce pressure.",
+        "Run the draft FCM what-if tool only to inspect modelled scenario changes.",
         "Contact the project monitoring team for a manual review.",
     ],
     limitations=[
         "Gemini AI explanation was unavailable at this time.",
-        "Risk scores are uncalibrated model outputs, not literal probabilities.",
+        "Risk scores are calibrated decision-support outputs, not guarantees of outcomes.",
         "SHAP values show model associations, not proven causation.",
     ],
     source="fallback",

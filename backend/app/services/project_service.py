@@ -14,16 +14,13 @@ import numpy as np
 import pandas as pd
 
 from app.config import (
+    ALLOW_DEMO_DATA,
     CANONICAL_DATA_PATH,
+    CANONICAL_DATA_SHA256,
     DEMO_DATA_DIR,
+    VERIFY_DATASET_SHA256,
     SCHEDULE_ALERT_TOP_N,
     SCHEDULE_ALERT_TOP_PERCENT,
-    R2_ENDPOINT_URL,
-    R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY,
-    R2_BUCKET_NAME,
-    R2_OBJECT_KEY,
-    R2_CACHE_DIR,
 )
 from app.schemas import (
     ProjectDetail,
@@ -66,58 +63,65 @@ def _val(row, col, default=None):
     return v
 
 
+class DatasetConfigurationError(RuntimeError):
+    """The canonical scoring dataset is missing or does not match the frozen hash."""
+
+
+_dataset_info: dict[str, Any] = {}
+
+
+def _sha256(path: Path) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def get_dataset_info() -> dict[str, Any]:
+    """Which dataset is loaded (path, mode, hash, size). Empty before startup."""
+    return dict(_dataset_info)
+
+
 def load_demo_data() -> None:
     """
     Startup loader:
-    1. Loads canonical dataset (enhanced_phase6_corrected.csv) if present locally.
-    2. If not present but R2 environment variables are configured, downloads the canonical
-       dataset from Cloudflare R2 and caches it locally.
-    3. If neither local nor R2 data is available/successful, falls back to demo_rows.csv.
-    4. Builds an optimized project summary index for sub-millisecond lookups.
-    5. Loads demo_projects.json for historical validation demo labels.
+    1. Loads the canonical dataset (backend/data/phase6/enhanced_phase6_corrected.csv
+       by default) and verifies its SHA-256 against the frozen manifests.
+       A missing or altered dataset raises DatasetConfigurationError and stops
+       startup. The 4-project demo file is used ONLY when ALLOW_DEMO_DATA=true.
+    2. Builds an optimized project summary index for sub-millisecond lookups.
+    3. Loads demo_projects.json for historical validation demo labels.
     """
-    global _full_df, _summary_df, _demo_manifest, _demo_pids
+    global _full_df, _summary_df, _demo_manifest, _demo_pids, _dataset_info
 
     data_path = CANONICAL_DATA_PATH
-
-    # R2 Download Mechanism
-    r2_ready = all([R2_ENDPOINT_URL, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_OBJECT_KEY])
-
-    if r2_ready and not data_path.exists():
-        R2_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        cached_file = R2_CACHE_DIR / Path(R2_OBJECT_KEY).name
-
-        if not cached_file.exists():
-            logger.info("R2 configuration detected. Downloading canonical dataset from Cloudflare R2...")
-            try:
-                import boto3
-                s3_client = boto3.client(
-                    's3',
-                    endpoint_url=R2_ENDPOINT_URL,
-                    aws_access_key_id=R2_ACCESS_KEY_ID,
-                    aws_secret_access_key=R2_SECRET_ACCESS_KEY,
-                    region_name='auto'
+    mode = "canonical"
+    sha = None
+    if data_path.exists():
+        if VERIFY_DATASET_SHA256:
+            sha = _sha256(data_path)
+            if sha != CANONICAL_DATA_SHA256:
+                raise DatasetConfigurationError(
+                    f"Canonical dataset {data_path} has SHA-256 {sha}, expected {CANONICAL_DATA_SHA256} "
+                    "(frozen Phase 6 ENHANCED file). Restore the original file; do not edit it."
                 )
-                logger.info(f"Downloading s3://{R2_BUCKET_NAME}/{R2_OBJECT_KEY} to {cached_file}")
-                s3_client.download_file(R2_BUCKET_NAME, R2_OBJECT_KEY, str(cached_file))
-                logger.info("Successfully downloaded canonical dataset from R2.")
-            except Exception as e:
-                logger.error(f"Failed to download canonical dataset from R2: {e}")
-                raise RuntimeError(f"R2 download failed. Please check configuration and network: {e}") from e
-
-        if cached_file.exists():
-            logger.info(f"Using cached R2 canonical dataset from {cached_file}")
-            data_path = cached_file
-
-    if not data_path.exists():
-        fallback_path = DEMO_DATA_DIR / "demo_rows.csv"
-        if fallback_path.exists():
-            logger.warning("Canonical data not found at %s. Using demo fallback %s", data_path, fallback_path)
-            data_path = fallback_path
-        else:
-            raise FileNotFoundError(
-                f"Neither canonical data ({data_path}) nor demo data ({fallback_path}) exists."
-            )
+    elif ALLOW_DEMO_DATA:
+        data_path = DEMO_DATA_DIR / "demo_rows.csv"
+        mode = "demo_only"
+        if not data_path.exists():
+            raise DatasetConfigurationError(f"ALLOW_DEMO_DATA=true but {data_path} does not exist.")
+        logger.warning(
+            "ALLOW_DEMO_DATA=true: canonical dataset missing at %s; serving the 4-project DEMO file %s. "
+            "Not valid for integration or production.", CANONICAL_DATA_PATH, data_path,
+        )
+    else:
+        raise DatasetConfigurationError(
+            f"Canonical dataset not found at {data_path}. It is required. Place "
+            "enhanced_phase6_corrected.csv at backend/data/phase6/ or set CANONICAL_DATA_DIR "
+            "to the folder containing it. (ALLOW_DEMO_DATA=true enables a 4-project dev fallback.)"
+        )
 
     logger.info("Loading dataset from %s ...", data_path)
     df = pd.read_csv(data_path, low_memory=False)
@@ -125,6 +129,14 @@ def load_demo_data() -> None:
     df["project_id"] = df["project_id"].astype(str).str.strip()
     df = df.sort_values(["project_id", "report_month"]).reset_index(drop=True)
     _full_df = df
+    _dataset_info = {
+        "mode": mode,
+        "path": str(data_path),
+        "sha256": sha,
+        "sha256_verified": sha is not None and sha == CANONICAL_DATA_SHA256,
+        "rows": int(len(df)),
+        "projects": int(df["project_id"].nunique()),
+    }
 
     # Load demo manifest if present
     manifest_path = DEMO_DATA_DIR / "demo_projects.json"
@@ -373,6 +385,7 @@ def get_project_timeline(project_id: str) -> Optional[ProjectTimelineResponse]:
 def get_project_trajectory(project_id: str) -> Optional[TrajectoryResponse]:
     """Computes historical risk trajectory for each monthly cycle using official models."""
     from app.services.model_service import score_row, classify, OFFICIAL_XGB_FEATURES
+    from app.services.registry_service import get_model_config
     from app.services.feature_service import build_feature_dict
     from app.schemas import TrajectoryResponse, TrajectoryPoint
 
@@ -396,9 +409,9 @@ def get_project_trajectory(project_id: str) -> Optional[TrajectoryResponse]:
                 cost_risk_score=round(c_score, 4) if c_score is not None else None,
                 schedule_risk_score=round(s_score, 4) if s_score is not None else None,
                 compound_risk_score=round(comp_score, 4) if comp_score is not None else None,
-                cost_risk_class=classify(c_score, 0.88) if c_score is not None else None,
-                schedule_risk_class=classify(s_score, 0.63) if s_score is not None else None,
-                compound_risk_class=classify(comp_score, 0.885) if comp_score is not None else None,
+                cost_risk_class=classify(c_score, get_model_config("cost_cuf_xgb")["threshold"]) if c_score is not None else None,
+                schedule_risk_class=classify(s_score, get_model_config("schedule_cuf_xgb")["threshold"]) if s_score is not None else None,
+                compound_risk_class=classify(comp_score, get_model_config("compound_cuf_xgb")["threshold"]) if comp_score is not None else None,
             )
         )
 
@@ -410,7 +423,7 @@ def get_portfolio_metrics() -> PortfolioMetricsResponse:
     total_projects = len(sdf)
     total_budget = float(sdf["original_cost"].dropna().sum())
     total_exp = float(sdf["cumulative_expenditure"].dropna().sum())
-
+    
     status_counts = sdf["status"].str.lower().value_counts()
     completed_count = int(status_counts.get("completed", 0))
     ongoing_count = int(status_counts.get("ongoing", total_projects - completed_count))
@@ -537,10 +550,11 @@ def get_operational_priority_queue(top_n: int = SCHEDULE_ALERT_TOP_N, top_pct: f
     """
     Operational priority queue:
     Ranks projects within the active dataset by schedule risk score.
-    Official threshold is 0.63 for schedule_cuf_xgb.
+    Uses the currently locked schedule-model threshold from the registry.
     Priority rank distinguishes highest-urgency items within review capacity.
     """
     from app.services.model_service import score_row, OFFICIAL_XGB_FEATURES
+    from app.services.registry_service import get_model_config
     from app.services.feature_service import build_feature_dict
 
     df = get_full_df()
@@ -577,14 +591,15 @@ def get_operational_priority_queue(top_n: int = SCHEDULE_ALERT_TOP_N, top_pct: f
 
     # Sort descending by schedule risk score
     scored_df = pd.DataFrame(scored).sort_values("schedule_risk_score", ascending=False).reset_index(drop=True)
-    total_flagged = int((scored_df["schedule_risk_score"] >= 0.63).sum()) if not scored_df.empty else 0
+    schedule_threshold = get_model_config("schedule_cuf_xgb")["threshold"]
+    total_flagged = int((scored_df["schedule_risk_score"] >= schedule_threshold).sum()) if not scored_df.empty else 0
 
     items = []
     effective_capacity = min(top_n, max(1, int(len(scored_df) * (top_pct / 100.0)))) if not scored_df.empty else top_n
 
     for idx, row in scored_df.head(100).iterrows():
         rank = idx + 1
-        requires_review = bool(row["schedule_risk_score"] >= 0.63 and rank <= effective_capacity)
+        requires_review = bool(row["schedule_risk_score"] >= schedule_threshold and rank <= effective_capacity)
         items.append(
             OperationalPriorityItem(
                 project_id=row["project_id"],
@@ -593,7 +608,7 @@ def get_operational_priority_queue(top_n: int = SCHEDULE_ALERT_TOP_N, top_pct: f
                 status=row["status"] or None,
                 as_of=row["as_of"],
                 schedule_risk_score=round(float(row["schedule_risk_score"]), 4),
-                schedule_threshold=0.63,
+                schedule_threshold=schedule_threshold,
                 priority_rank=rank,
                 requires_immediate_review=requires_review,
                 cost_risk_score=round(float(row["cost_risk_score"]), 4),
@@ -611,6 +626,7 @@ def get_operational_priority_queue(top_n: int = SCHEDULE_ALERT_TOP_N, top_pct: f
 
 def compare_projects(project_ids: list[str]) -> CompareProjectsResponse:
     from app.services.model_service import score_row, classify, OFFICIAL_XGB_FEATURES
+    from app.services.registry_service import get_model_config
     from app.services.feature_service import build_feature_dict
 
     df = get_full_df()
@@ -649,9 +665,9 @@ def compare_projects(project_ids: list[str]) -> CompareProjectsResponse:
                 cost_risk_score=round(cost_score, 4),
                 schedule_risk_score=round(sched_score, 4),
                 compound_risk_score=round(comp_score, 4),
-                cost_risk_class=classify(cost_score, 0.88),
-                schedule_risk_class=classify(sched_score, 0.63),
-                compound_risk_class=classify(comp_score, 0.885),
+                cost_risk_class=classify(cost_score, get_model_config("cost_cuf_xgb")["threshold"]),
+                schedule_risk_class=classify(sched_score, get_model_config("schedule_cuf_xgb")["threshold"]),
+                compound_risk_class=classify(comp_score, get_model_config("compound_cuf_xgb")["threshold"]),
             )
         )
 

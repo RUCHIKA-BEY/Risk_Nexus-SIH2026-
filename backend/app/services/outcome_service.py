@@ -15,11 +15,8 @@ from app.services.project_service import get_project_rows
 
 logger = logging.getLogger(__name__)
 
-THRESHOLDS = {
-    "cost_cuf_xgb": 0.88,
-    "schedule_cuf_xgb": 0.63,
-    "compound_cuf_xgb": 0.885,
-}
+# Thresholds are NOT defined here. Predicted classes come from the official
+# frozen XGBoost models with the thresholds in model_registry.json.
 
 TARGETS = {
     "cost": "cost_event_6m",

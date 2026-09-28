@@ -29,6 +29,7 @@ from app.routes.simulations import router as simulations_router
 from app.routes.ai import router as ai_router
 from app.routes.analytics import router as analytics_router
 from app.routes.actions import router as actions_router
+from app.routes.risk import router as risk_router
 
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -46,15 +47,9 @@ async def lifespan(app: FastAPI):
     logger.info("Step 2: Loading and hash-verifying model pipelines...")
     load_all_models()
 
-    logger.info("Step 3: Loading demo dataset...")
-    try:
-        load_demo_data()
-    except FileNotFoundError as e:
-        logger.warning(
-            "Demo data not found: %s\n"
-            "Run: python backend/scripts/select_demo_projects.py --data-dir <path> --model-dir backend/artifacts/deployment_v2 --out backend/demo_data",
-            e,
-        )
+    logger.info("Step 3: Loading canonical dataset...")
+    # Fails loudly (DatasetConfigurationError) if the dataset is missing or altered.
+    load_demo_data()
 
     logger.info("=== Startup complete. Official models: cost_cuf_xgb, schedule_cuf_xgb, compound_cuf_xgb ===")
     yield
@@ -66,7 +61,7 @@ app = FastAPI(
     description=(
         "Official infrastructure project risk monitoring API. "
         "Production models: cost_cuf_xgb, schedule_cuf_xgb, compound_cuf_xgb. "
-        "Risk scores are uncalibrated model outputs, not literal probabilities."
+        "Risk scores are calibrated model outputs for ranking and alerting, not guarantees of outcomes."
     ),
     version="2.0.0",
     lifespan=lifespan,
@@ -115,6 +110,7 @@ app.include_router(simulations_router, prefix=API_PREFIX)
 app.include_router(ai_router, prefix=API_PREFIX)
 app.include_router(analytics_router, prefix=API_PREFIX)
 app.include_router(actions_router, prefix=API_PREFIX)
+app.include_router(risk_router, prefix=API_PREFIX)
 
 
 @app.get("/", tags=["Root"])
@@ -125,5 +121,5 @@ def root():
         "docs": "/docs",
         "health": f"{API_PREFIX}/health",
         "official_models": ["cost_cuf_xgb", "schedule_cuf_xgb", "compound_cuf_xgb"],
-        "disclaimer": "Risk scores are uncalibrated model outputs and are not literal real-world probabilities.",
+        "disclaimer": "Risk scores are calibrated model outputs for ranking and alerting, not guarantees of outcomes.",
     }

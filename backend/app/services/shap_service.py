@@ -1,25 +1,22 @@
-"""
-SHAP explanation service.
-For XGBoost: extract classifier from pipeline, apply preprocessor.transform(X),
-pass to shap.TreeExplainer, aggregate one-hot features back to raw names.
-For LR: use shap.LinearExplainer with the same approach.
+"""Local explanations for the frozen production XGBoost models.
+
+The frozen models are calibrated after XGBoost. Native TreeSHAP explains the
+XGBoost raw margin before calibration; it must not be added to, or compared
+with, the calibrated probability displayed by the dashboard.
 """
 from __future__ import annotations
 
-import logging
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
-import shap
+import xgboost as xgb
 
 from app.schemas import SHAPDriver
-from app.services.model_service import get_pipeline
+from app.services.model_service import get_model_bundle
 from app.services.registry_service import get_model_config
 
-logger = logging.getLogger(__name__)
-
-SHAP_ADDITIVITY_TOLERANCE = 1e-3
+SHAP_ADDITIVITY_TOLERANCE = 1e-4
 
 
 def _aggregate_ohe_shap(
@@ -27,35 +24,50 @@ def _aggregate_ohe_shap(
     shap_values: np.ndarray,
     raw_features: list[str],
 ) -> dict[str, float]:
-    """
-    Aggregate one-hot encoded SHAP values back into raw feature contributions.
-    e.g. cat__sector_std_RAILWAYS + cat__sector_std_POWER -> sector_std
-    """
+    """Aggregate transformed columns (including one-hot columns) to raw fields."""
     aggregated: dict[str, float] = {}
-    for i, name in enumerate(feature_names):
-        # Map transformed column name to raw feature name
-        raw_name = name
-        if name.startswith("num__missingindicator_"):
-            raw_name = name.replace("num__missingindicator_", "") + " [missing]"
-        elif name.startswith("num__"):
-            raw_name = name[5:]  # strip "num__"
-        elif name.startswith("cat__"):
-            # e.g. cat__sector_std_RAILWAYS -> sector_std
-            parts = name[5:].split("_")
-            # find which raw feature this belongs to
-            matched = None
-            for rf in raw_features:
-                if name[5:].startswith(rf + "_") or name[5:] == rf:
-                    matched = rf
-                    break
-            if matched is None:
-                # fallback: use the OHE column name itself
-                matched = name[5:].rsplit("_", 1)[0] if "_" in name[5:] else name[5:]
-            raw_name = matched
+    raw_features_longest_first = sorted(raw_features, key=len, reverse=True)
 
-        val = float(shap_values[i])
-        aggregated[raw_name] = aggregated.get(raw_name, 0.0) + val
+    for name, value in zip(feature_names, shap_values, strict=True):
+        transformed_name = str(name)
+        without_prefix = transformed_name.split("__", 1)[-1]
+
+        raw_name = None
+        for candidate in raw_features_longest_first:
+            if without_prefix == candidate or without_prefix.startswith(candidate + "_"):
+                raw_name = candidate
+                break
+
+        if raw_name is None and without_prefix.startswith("missingindicator_"):
+            missing_name = without_prefix.removeprefix("missingindicator_")
+            raw_name = missing_name if missing_name in raw_features else transformed_name
+        if raw_name is None:
+            raw_name = transformed_name
+
+        aggregated[raw_name] = aggregated.get(raw_name, 0.0) + float(value)
     return aggregated
+
+
+def _native_tree_contributions(
+    booster: Any,
+    transformed: Any,
+) -> tuple[np.ndarray, float, float]:
+    """Return feature contributions, bias and raw margin for one row."""
+    matrix = xgb.DMatrix(transformed)
+    contributions = np.asarray(booster.predict(matrix, pred_contribs=True))
+    margin = float(np.asarray(booster.predict(matrix, output_margin=True)).reshape(-1)[0])
+
+    if contributions.ndim != 2 or contributions.shape[0] != 1:
+        raise ValueError(f"Unexpected TreeSHAP contribution shape: {contributions.shape}")
+
+    feature_contributions = contributions[0, :-1]
+    bias = float(contributions[0, -1])
+    error = abs(float(feature_contributions.sum()) + bias - margin)
+    if error > SHAP_ADDITIVITY_TOLERANCE:
+        raise ValueError(
+            f"TreeSHAP raw-margin additivity check failed: error={error:.6g}"
+        )
+    return feature_contributions, bias, margin
 
 
 def compute_shap(
@@ -64,92 +76,65 @@ def compute_shap(
     ordered_features: list[str],
     n_drivers: int = 5,
 ) -> tuple[list[SHAPDriver], list[SHAPDriver]]:
-    """
-    Compute SHAP for a single row.
-    Returns (positive_drivers, negative_drivers) each list of up to n_drivers SHAPDrivers.
-    """
+    """Explain one frozen official XGBoost prediction in raw-margin space."""
     cfg = get_model_config(model_id)
-    shap_support = cfg.get("shap_support", "TreeExplainer")
-    pipeline = get_pipeline(model_id)
+    if not cfg.get("official_prediction") or cfg.get("shap_support") != "NativeTreeSHAP":
+        raise ValueError(
+            f"SHAP is enabled only for frozen official XGBoost models; {model_id} is not eligible"
+        )
 
-    # Build input DataFrame
-    row_df = pd.DataFrame([{col: feature_row.get(col) for col in ordered_features}])
+    bundle = get_model_bundle(model_id)
+    bundle_features = list(bundle["features"])
+    if list(ordered_features) != bundle_features:
+        raise ValueError(f"Feature order does not match frozen bundle for {model_id}")
 
-    # Step 1: Apply preprocessor
-    preprocessor = pipeline[:-1]  # all steps except last estimator
-    estimator = pipeline[-1]      # final classifier/regressor
-
-    X_transformed = preprocessor.transform(row_df)
-    if hasattr(X_transformed, "toarray"):
-        X_transformed = X_transformed.toarray()
-
-    # Get transformed feature names from the preprocessor
-    try:
-        transformed_feature_names = preprocessor.get_feature_names_out()
-    except Exception:
-        transformed_feature_names = [f"f{i}" for i in range(X_transformed.shape[1])]
-
-    # Step 2: SHAP explanation
-    if shap_support == "TreeExplainer":
-        explainer = shap.TreeExplainer(estimator)
-        shap_vals = explainer.shap_values(X_transformed)
-        if isinstance(shap_vals, list):
-            shap_vals = shap_vals[1]  # binary: class 1
-        sv = shap_vals[0]  # first (and only) row
-
-        # Verify additivity
-        raw_prob = float(pipeline.predict_proba(row_df)[0, 1])
-        expected_val = float(explainer.expected_value)
-        if isinstance(explainer.expected_value, (list, np.ndarray)):
-            expected_val = float(explainer.expected_value[1])
-        shap_sum = sv.sum() + expected_val
-
-        # Map logit back if needed: XGBoost margin vs probability
-        # We check additivity in logit space (common for TreeExplainer with XGB)
-        additivity_err = abs(shap_sum - raw_prob)
-        if additivity_err > SHAP_ADDITIVITY_TOLERANCE:
-            logger.debug("SHAP additivity (raw prob space) err=%.2e; acceptable", additivity_err)
-
-    elif shap_support == "LinearExplainer":
-        explainer = shap.LinearExplainer(estimator, X_transformed)
-        shap_vals = explainer.shap_values(X_transformed)
-        if isinstance(shap_vals, list):
-            shap_vals = shap_vals[0]
-        sv = shap_vals[0]
-    else:
-        logger.warning("Unknown shap_support %s for %s", shap_support, model_id)
-        return [], []
-
-    # Aggregate OHE features back to raw names
-    sv_dict = _aggregate_ohe_shap(
-        list(transformed_feature_names),
-        sv,
-        ordered_features,
+    row_df = pd.DataFrame(
+        [{column: feature_row.get(column, np.nan) for column in bundle_features}]
     )
+    preprocessor = bundle["preprocessor"]
+    transformed = preprocessor.transform(row_df)
 
-    # Build SHAPDriver objects
-    drivers = []
-    for feat, val in sv_dict.items():
-        raw_feat = feat.replace(" [missing]", "")
-        feat_value = feature_row.get(raw_feat)
+    try:
+        transformed_names = list(preprocessor.get_feature_names_out())
+    except Exception:
+        transformed_names = [f"feature_{i}" for i in range(transformed.shape[1])]
+
+    booster = bundle.get("booster")
+    if booster is None:
+        estimator = bundle.get("estimator")
+        if estimator is None or not hasattr(estimator, "get_booster"):
+            raise ValueError(f"No XGBoost booster available for {model_id}")
+        booster = estimator.get_booster()
+    values, _, _ = _native_tree_contributions(booster, transformed)
+    if len(transformed_names) != len(values):
+        raise ValueError(
+            f"Transformed feature-name count ({len(transformed_names)}) does not match "
+            f"TreeSHAP value count ({len(values)})"
+        )
+
+    aggregated = _aggregate_ohe_shap(transformed_names, values, bundle_features)
+    drivers: list[SHAPDriver] = []
+    for feature, value in aggregated.items():
+        if value == 0:
+            continue
         drivers.append(
             SHAPDriver(
-                feature=feat,
-                raw_label=feat,
-                shap_value=round(val, 6),
-                direction="increases_risk" if val > 0 else "decreases_risk",
-                feature_value=feat_value,
+                feature=feature,
+                raw_label=feature,
+                shap_value=round(value, 6),
+                direction="increases_risk" if value > 0 else "decreases_risk",
+                feature_value=feature_row.get(feature),
             )
         )
 
-    # Sort by absolute SHAP value
-    drivers.sort(key=lambda d: abs(d.shap_value), reverse=True)
-    positive_drivers = [d for d in drivers if d.shap_value > 0][:n_drivers]
-    negative_drivers = [d for d in drivers if d.shap_value < 0][:n_drivers]
-    return positive_drivers, negative_drivers
+    drivers.sort(key=lambda driver: abs(driver.shap_value), reverse=True)
+    positive = [driver for driver in drivers if driver.shap_value > 0][:n_drivers]
+    negative = [driver for driver in drivers if driver.shap_value < 0][:n_drivers]
+    return positive, negative
 
 
 SHAP_DISCLAIMER = (
-    "SHAP values show model associations, not proven real-world causation. "
-    "A positive SHAP value means this feature increased the model's risk score for this row."
+    "TreeSHAP explains the frozen XGBoost signal before probability calibration. "
+    "Driver direction and relative strength describe model associations, not causation; "
+    "SHAP values are raw-margin contributions and are not percentage-point changes."
 )

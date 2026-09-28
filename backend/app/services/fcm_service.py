@@ -22,9 +22,15 @@ logger = logging.getLogger(__name__)
 FCM_WEIGHTS_PATH = Path(__file__).parent.parent / "fcm" / "fcm_weights.json"
 
 FCM_DISCLAIMER = (
-    "Expert-weighted scenario simulation; not an official model prediction or causal estimate. "
-    "FCM outputs must never be described as calibrated probabilities or official risk scores."
+    "Draft expert-weighted scenario simulation; not an official model prediction, calibrated "
+    "probability, or causal estimate. Weights and normalisation rules require domain approval."
 )
+
+INPUT_NODES = frozenset({
+    "physical_progress_gap", "expenditure_progress_gap",
+    "reported_delay_pressure", "cost_revision_pressure",
+    "schedule_revision_pressure", "forecast_cost_pressure",
+})
 
 
 def _sigmoid(x: float) -> float:
@@ -33,6 +39,12 @@ def _sigmoid(x: float) -> float:
         return 1.0 / (1.0 + math.exp(-x))
     exp_x = math.exp(x)
     return exp_x / (1.0 + exp_x)
+
+
+def _logit(value: float) -> float:
+    """Stable inverse sigmoid for an activation in [0, 1]."""
+    clipped = min(max(float(value), 1e-6), 1.0 - 1e-6)
+    return math.log(clipped / (1.0 - clipped))
 
 
 def _load_fcm_config() -> dict[str, Any]:
@@ -125,20 +137,30 @@ def _run_fcm(
     iterations: int,
     convergence_tolerance: float,
     frozen_nodes: Optional[set[str]] = None,
+    damping: float = 0.5,
 ) -> tuple[dict[str, float], int, bool]:
     """
-    Run FCM iteration with the update rule: A_next = sigmoid(A + W.T @ A).
-    frozen_nodes are clamped to their initial values throughout.
+    Run an anchored, damped FCM iteration.
+
+    Candidate endogenous state = sigmoid(logit(initial state) + W.T @ state).
+    Damping reduces oscillation, and frozen exogenous nodes remain fixed throughout.
     """
+    if not (0.0 < damping <= 1.0):
+        raise ValueError("FCM damping must be in (0, 1]")
     frozen_nodes = frozen_nodes or set()
     A = np.array([initial_state[n] for n in nodes], dtype=float)
+    anchor = np.array([_logit(initial_state[n]) for n in nodes], dtype=float)
     frozen_mask = np.array([n in frozen_nodes for n in nodes])
 
     converged = False
     for step in range(iterations):
-        A_next = np.array([_sigmoid(A[i] + float(W[:, i].T @ A)) for i in range(len(nodes))])
+        candidate = np.array([
+            _sigmoid(anchor[i] + float(W[:, i].T @ A))
+            for i in range(len(nodes))
+        ])
+        A_next = (1.0 - damping) * A + damping * candidate
         # Clamp frozen nodes
-        A_next[frozen_mask] = A[frozen_mask]
+        A_next[frozen_mask] = np.array([initial_state[n] for n in nodes])[frozen_mask]
         # Clamp all to [0, 1]
         A_next = np.clip(A_next, 0.0, 1.0)
 
@@ -169,30 +191,27 @@ def run_fcm_simulation(
     # Derive baseline state from project data
     baseline_init = _derive_baseline_state(project_id, as_of, nodes)
 
-    # Run baseline FCM
+    damping = float(cfg.get("metadata", {}).get("damping", 0.5))
+
+    # Project measurements are exogenous and must not drift during propagation.
     baseline_state, baseline_iters, baseline_conv = _run_fcm(
-        baseline_init, nodes, W, iterations, convergence_tolerance
+        baseline_init, nodes, W, iterations, convergence_tolerance,
+        frozen_nodes=set(INPUT_NODES), damping=damping,
     )
 
     # Apply scenario overrides (input nodes only, clamped to [0,1])
-    CONTROLLABLE_NODES = {
-        "physical_progress_gap", "expenditure_progress_gap",
-        "reported_delay_pressure", "cost_revision_pressure",
-        "schedule_revision_pressure", "forecast_cost_pressure",
-    }
     scenario_init = dict(baseline_init)
-    frozen = set()
     for node, val in (scenario_overrides or {}).items():
         if node not in nodes:
             raise ValueError(f"Unknown FCM node: {node}")
+        if node not in INPUT_NODES:
+            raise ValueError(f"FCM output node cannot be directly overridden: {node}")
         scenario_init[node] = float(max(0.0, min(1.0, val)))
-        if node in CONTROLLABLE_NODES:
-            frozen.add(node)
 
-    # Run scenario FCM with frozen controllable inputs
+    # Every exogenous input is clamped in both baseline and scenario runs.
     scenario_state, scenario_iters, scenario_conv = _run_fcm(
         scenario_init, nodes, W, iterations, convergence_tolerance,
-        frozen_nodes=frozen,
+        frozen_nodes=set(INPUT_NODES), damping=damping,
     )
 
     # Compute changes
