@@ -105,6 +105,7 @@ backend/
 - **Default path:** `backend/data/phase6/enhanced_phase6_corrected.csv`. It is bundled and needs no configuration.
 - **Override:** set `CANONICAL_DATA_DIR` to an **absolute** folder containing the file.
 - **Integrity:** at startup the file's SHA-256 must equal `e2aa83f3835b1f3b21633715cdc0441ac10a174a2e6832f623c00f464305458c`.
+- **Remote source (Supabase Storage):** if the local file is absent and `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET` and `SUPABASE_OBJECT_PATH` are set, startup downloads the object **once** into `DATASET_CACHE_DIR` (default `backend/.dataset_cache`). The download goes to a temporary file, is checked (HTTP 200, full length, CSV header, SHA-256), and is renamed into the cache only after it passes. Later startups reuse a valid cached copy. Partial Supabase settings, a failed download or a wrong file fail startup with `DatasetConfigurationError`; the key never appears in logs or errors. `/model-info` reports `dataset.source` = `local`, `cache` or `supabase`.
 - **If missing or altered:** startup fails with `DatasetConfigurationError`. There is **no silent demo fallback**. `ALLOW_DEMO_DATA=true` is an explicit dev-only escape hatch serving 4 projects; never use it for integration or production.
 - **Content:** public-source OCMS/PAIMANA project monitoring records (IDs, costs, dates, sectors, states). It contains no personal data.
 - **Git:** it must be committed. It is 25.8 MB, under GitHub's 100 MB limit, so no LFS is needed. `backend/.gitignore` re-includes it, but check the repository's root `.gitignore` with:
@@ -148,6 +149,8 @@ Use `requirements.txt` alone for a runtime-only deployment. There are no system 
 | `CANONICAL_DATA_DIR` | `backend/data/phase6` | Folder with the scoring dataset |
 | `VERIFY_DATASET_SHA256` | `true` | Fail startup if the dataset is not the frozen file |
 | `ALLOW_DEMO_DATA` | `false` | Dev-only 4-project fallback |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET`, `SUPABASE_OBJECT_PATH` | empty | Download the dataset from Supabase Storage when the local file is absent. Server-side secret; never expose to the frontend |
+| `DATASET_CACHE_DIR`, `DATASET_DOWNLOAD_TIMEOUT_SECONDS` | `backend/.dataset_cache`, `120` | Where the downloaded CSV is cached; download timeout |
 | `DEMO_DATA_DIR` | `backend/demo_data` | Demo labels (`demo_projects.json`) |
 | `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | CORS; add the deployed frontend URL. `*` is rejected by tests |
 | `GEMINI_API_KEY` | empty | Optional; without it `/ai/explain` returns a template. Never commit a key |

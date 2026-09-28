@@ -79,7 +79,10 @@ def test_canonical_dataset_bundled_and_loaded():
 def test_missing_dataset_fails_loudly(monkeypatch, tmp_path):
     from app.services import project_service
     monkeypatch.setattr(project_service, "CANONICAL_DATA_PATH", tmp_path / "absent.csv")
+    monkeypatch.setattr(project_service, "DATASET_CACHE_DIR", tmp_path / "cache")
     monkeypatch.setattr(project_service, "ALLOW_DEMO_DATA", False)
+    for name in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_BUCKET", "SUPABASE_OBJECT_PATH"):
+        monkeypatch.setattr(project_service, name, "")
     with pytest.raises(project_service.DatasetConfigurationError, match="Canonical dataset not found"):
         project_service.load_demo_data()
 
