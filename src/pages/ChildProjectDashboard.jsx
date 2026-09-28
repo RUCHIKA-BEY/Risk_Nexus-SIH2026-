@@ -29,9 +29,8 @@ export default function ChildProjectDashboard() {
 
   if (loading) {
     return (
-      <div className="p-12 flex flex-col items-center justify-center min-h-[400px] space-y-3">
-        <LoadingSpinner />
-        <p className="text-xs text-slate-500">Loading project {projectId} from backend...</p>
+      <div className="p-12 flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner label={`Loading project ${projectId}…`} />
       </div>
     );
   }
@@ -76,7 +75,7 @@ export default function ChildProjectDashboard() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
-      <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 sticky top-0 z-10">
+      <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -106,7 +105,7 @@ export default function ChildProjectDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
               project.status === 'Completed'
                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
                 : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'

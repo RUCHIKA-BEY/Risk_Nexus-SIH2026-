@@ -7,4 +7,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    port: 5173,
+    proxy: {
+      // Proxy all /api/v1 requests to the FastAPI backend
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

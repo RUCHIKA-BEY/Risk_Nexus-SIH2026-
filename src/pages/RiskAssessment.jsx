@@ -6,6 +6,7 @@
  */
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { Search, Sparkles, FlaskConical, BarChart2, Zap, Loader2 } from 'lucide-react';
 import {
   fetchMLProjectDetail,
   fetchProjectTimeline,
@@ -405,7 +406,7 @@ export default function RiskAssessment() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
           Risk Assessment
         </h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -445,12 +446,12 @@ export default function RiskAssessment() {
               onClick={runAssessment}
               disabled={loading || !selectedMonth}
               id="btn-run-assessment"
-              className="px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all duration-200 flex items-center gap-2"
+              className="px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all duration-200 inline-flex items-center gap-2"
             >
               {loading ? (
-                <><span className="animate-spin">⟳</span> Scoring…</>
+                <><Loader2 size={16} className="animate-spin" /> Scoring…</>
               ) : (
-                <><span>⚡</span> Run Assessment</>
+                <><Zap size={16} /> Run Assessment</>
               )}
             </button>
           </div>
@@ -508,31 +509,35 @@ export default function RiskAssessment() {
               onClick={revealOutcome}
               disabled={outcomeLoading}
               id="btn-reveal-outcome"
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
             >
-              {outcomeLoading ? '⟳ Loading…' : '🔍 Reveal Actual Outcome'}
+              {outcomeLoading
+                ? <><Loader2 size={15} className="animate-spin" /> Loading…</>
+                : <><Search size={15} /> Reveal Actual Outcome</>}
             </button>
             <button
               onClick={loadAIExplanation}
               disabled={aiLoading}
               id="btn-ai-explain"
-              className="px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
             >
-              {aiLoading ? '⟳ Generating…' : '✨ AI Explanation'}
+              {aiLoading
+                ? <><Loader2 size={15} className="animate-spin" /> Generating…</>
+                : <><Sparkles size={15} /> AI Explanation</>}
             </button>
             <button
               onClick={loadAnalysis}
               id="btn-exploratory"
-              className="px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
             >
-              🔬 Exploratory Analysis
+              <FlaskConical size={15} /> Exploratory Analysis
             </button>
             <button
               onClick={loadBenchmark}
               id="btn-benchmark"
-              className="px-4 py-2 bg-slate-500 text-white text-sm font-semibold rounded-lg hover:bg-slate-600 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-500 text-white text-sm font-semibold rounded-lg hover:bg-slate-600 transition-colors"
             >
-              📊 LR Benchmark
+              <BarChart2 size={15} /> LR Benchmark
             </button>
           </div>
         </div>

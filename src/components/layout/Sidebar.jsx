@@ -13,7 +13,8 @@ import {
   Bell,
   ChevronDown,
   ChevronRight,
-  ChevronLeft
+  Menu,
+  LogIn,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
@@ -43,8 +44,6 @@ const navItems = [
     subLinks: [
       { id: 'insights', label: 'AI Insights', path: '/ai/insights' },
       { id: 'alerts', label: 'Risk Alerts', path: '/ai/alerts' },
-      { id: 'predictions', label: 'Predictions', path: '/ai/predictions' },
-      { id: 'recommendations', label: 'Recommendations', path: '/ai/recommendations' },
     ],
   },
   {
@@ -52,11 +51,6 @@ const navItems = [
     label: 'Actions',
     icon: Activity,
     path: '/actions',
-    subLinks: [
-      { id: 'my-actions', label: 'My Actions', path: '/actions/my-actions' },
-      { id: 'pending', label: 'Pending Actions', path: '/actions/pending' },
-      { id: 'escalations', label: 'Escalations', path: '/actions/escalations' },
-    ],
   },
   { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },
   {
@@ -64,11 +58,6 @@ const navItems = [
     label: 'Reports',
     icon: BarChart3,
     path: '/reports',
-    subLinks: [
-      { id: 'all-reports', label: 'Reports', path: '/reports/all' },
-      { id: 'auto-reports', label: 'Auto Reports', path: '/reports/auto' },
-      { id: 'scheduled', label: 'Scheduled Reports', path: '/reports/scheduled' },
-    ],
   },
   {
     id: 'settings',
@@ -98,75 +87,84 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
     setExpandedMenu((prev) => (prev === menuId ? null : menuId));
   };
 
-  const baseLinkClasses = `w-full flex items-center ${isCollapsed ? 'justify-center py-3' : 'justify-between gap-3 px-3 py-2.5'} rounded text-sm transition-colors cursor-pointer`;
-  const activeLinkClasses = "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium";
-  const inactiveLinkClasses = "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800";
+  const baseLinkClasses = `w-full flex items-center ${isCollapsed ? 'justify-center py-3' : 'justify-between gap-3 px-3 py-2.5'} rounded-lg text-sm transition-colors duration-150 cursor-pointer`;
+  const activeLinkClasses = 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium';
+  const inactiveLinkClasses = 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800';
 
-  const subLinkBaseClasses = "w-full flex items-center pl-10 pr-3 py-2 rounded text-xs transition-colors";
-  const subLinkActiveClasses = "text-blue-600 dark:text-blue-400 font-medium bg-slate-50 dark:bg-slate-800/50";
-  const subLinkInactiveClasses = "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50";
+  const subLinkBaseClasses = 'w-full flex items-center pl-10 pr-3 py-2 rounded-lg text-xs transition-colors duration-150';
+  const subLinkActiveClasses = 'text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20';
+  const subLinkInactiveClasses = 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/70';
 
   return (
-    <aside className={`min-h-screen bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-200 ease-in-out shrink-0 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      
-      {/* Top Section (Toggle) */}
-      <div className={`px-4 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center ${isCollapsed ? 'justify-center' : 'justify-end'}`}>
+    <aside
+      className={`h-full bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-200 ease-in-out shrink-0 pt-[68px] ${isCollapsed ? 'w-[60px]' : 'w-64'}`}
+    >
+      {/* Sidebar Header with 2-way Hamburger Toggle */}
+      <div
+        className={`border-b border-slate-200 dark:border-slate-800 flex items-center h-14 shrink-0 px-3.5 ${
+          isCollapsed ? 'justify-center' : 'justify-start'
+        }`}
+      >
         <button
           onClick={toggleSidebar}
-          className="p-1.5 rounded text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none"
-          title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          title={isCollapsed ? 'Expand Sidebar (☰)' : 'Collapse Sidebar (☰)'}
+          aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          <Menu size={20} className="shrink-0" />
         </button>
       </div>
 
-      {/* Middle Section (Navigation Links) */}
+      {/* Navigation Links and Action Controls */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        <nav className={`py-4 space-y-1 ${isCollapsed ? 'px-2' : 'px-3'}`}>
+        <nav className={`py-3 space-y-0.5 ${isCollapsed ? 'px-1.5' : 'px-2'}`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isExpanded = expandedMenu === item.id;
 
             return (
-              <div key={item.id} className="space-y-1">
+              <div key={item.id} className="space-y-0.5">
                 {item.subLinks ? (
                   <>
                     <button
                       onClick={() => toggleMenu(item.id)}
                       className={`${baseLinkClasses} ${isExpanded ? activeLinkClasses : inactiveLinkClasses}`}
                       title={isCollapsed ? item.label : undefined}
+                      aria-label={item.label}
                     >
                       <div className="flex items-center gap-3">
                         <Icon size={18} className="shrink-0" />
                         {!isCollapsed && (
-                          <span className="whitespace-nowrap">
+                          <span className="whitespace-nowrap text-sm">
                             {item.label}
                           </span>
                         )}
                       </div>
                       {!isCollapsed && (
-                        <span className="shrink-0">
-                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        <span className="shrink-0 text-slate-400">
+                          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </span>
                       )}
                     </button>
                     {!isCollapsed && (
                       <div
-                        className={`space-y-0.5 overflow-hidden transition-all duration-300 ease-in-out ${
+                        className={`overflow-hidden transition-all duration-250 ease-in-out ${
                           isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
                         }`}
                       >
-                        {item.subLinks.map((sub) => (
-                          <NavLink
-                            key={sub.id}
-                            to={sub.path}
-                            className={({ isActive }) =>
-                              `${subLinkBaseClasses} ${isActive ? subLinkActiveClasses : subLinkInactiveClasses}`
-                            }
-                          >
-                            <span className="whitespace-nowrap">{sub.label}</span>
-                          </NavLink>
-                        ))}
+                        <div className="space-y-0.5 pb-1">
+                          {item.subLinks.map((sub) => (
+                            <NavLink
+                              key={sub.id}
+                              to={sub.path}
+                              className={({ isActive }) =>
+                                `${subLinkBaseClasses} ${isActive ? subLinkActiveClasses : subLinkInactiveClasses}`
+                              }
+                            >
+                              <span className="whitespace-nowrap">{sub.label}</span>
+                            </NavLink>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </>
@@ -178,11 +176,12 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
                       `${baseLinkClasses} ${isActive ? activeLinkClasses : inactiveLinkClasses}`
                     }
                     title={isCollapsed ? item.label : undefined}
+                    aria-label={item.label}
                   >
                     <div className="flex items-center gap-3">
                       <Icon size={18} className="shrink-0" />
                       {!isCollapsed && (
-                        <span className="whitespace-nowrap">
+                        <span className="whitespace-nowrap text-sm">
                           {item.label}
                         </span>
                       )}
@@ -192,26 +191,65 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
               </div>
             );
           })}
+
+          {/* Clean Separator for Reachable Actions */}
+          <div className="pt-3 pb-2">
+            <div className="border-t border-slate-200 dark:border-slate-800" />
+          </div>
+
+          {/* Reachable Theme Control (Directly below navigation) */}
+          <div>
+            <button
+              onClick={toggleTheme}
+              className={`w-full flex items-center ${
+                isCollapsed ? 'justify-center py-3' : 'gap-3 px-3 py-2.5'
+              } rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              title={isCollapsed ? (theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode') : undefined}
+              aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? (
+                <Moon size={18} className="shrink-0 text-slate-600 dark:text-slate-400" />
+              ) : (
+                <Sun size={18} className="shrink-0 text-amber-500" />
+              )}
+              {!isCollapsed && (
+                <span className="whitespace-nowrap font-medium text-sm">
+                  {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Reachable Sign In Entry */}
+          <div>
+            <NavLink
+              to="/login"
+              className={({ isActive }) =>
+                `w-full flex items-center ${
+                  isCollapsed ? 'justify-center py-3' : 'gap-3 px-3 py-2.5'
+                } rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isActive
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`
+              }
+              title={isCollapsed ? 'Sign In — Government Official Access' : undefined}
+              aria-label="Sign In — Government Official Access"
+            >
+              <LogIn size={18} className="shrink-0 text-blue-600 dark:text-blue-400" />
+              {!isCollapsed && (
+                <div className="flex flex-col text-left min-w-0">
+                  <span className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">
+                    Sign In
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight truncate">
+                    Govt Official Access
+                  </span>
+                </div>
+              )}
+            </NavLink>
+          </div>
         </nav>
-      </div>
-
-      {/* Bottom Section (CRITICAL RESTORATION) */}
-      <div className="px-4 py-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col gap-4 mt-auto shrink-0">
-        
-        {/* Dark Mode Toggle */}
-        <button
-          onClick={toggleTheme}
-          className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2'} w-full py-2 rounded text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none`}
-          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-        >
-          {theme === 'light' ? <Moon size={18} className="shrink-0" /> : <Sun size={18} className="shrink-0" />}
-          {!isCollapsed && (
-            <span className="text-sm font-medium whitespace-nowrap">
-              Dark Mode
-            </span>
-          )}
-        </button>
-
       </div>
     </aside>
   );
