@@ -11,6 +11,12 @@ Environment variables (all optional; defaults are correct for this package):
     VERIFY_DATASET_SHA256    default true  (dataset must match the frozen hash)
     ALLOW_DEMO_DATA          default false (true = explicit dev-only fallback)
     DEMO_DATA_DIR            default backend/demo_data
+    SUPABASE_URL             default empty  \
+    SUPABASE_SERVICE_ROLE_KEY default empty  | used only when the local canonical CSV is
+    SUPABASE_BUCKET          default empty  | missing: it is downloaded once at startup
+    SUPABASE_OBJECT_PATH     default empty  /  from Supabase Storage into DATASET_CACHE_DIR
+    DATASET_CACHE_DIR        default backend/.dataset_cache
+    DATASET_DOWNLOAD_TIMEOUT_SECONDS default 120
     TVM_DATA_DIR             default <repo parent>/TVM-.../TVM (disabled analysis route only)
     ALLOWED_ORIGINS          default http://localhost:5173,http://localhost:3000
     GEMINI_API_KEY           default empty -> /ai/explain uses its template fallback
@@ -67,6 +73,16 @@ CANONICAL_DATA_PATH: Path = CANONICAL_DATA_DIR / CANONICAL_DATA_FILENAME
 CANONICAL_DATA_SHA256 = "e2aa83f3835b1f3b21633715cdc0441ac10a174a2e6832f623c00f464305458c"
 VERIFY_DATASET_SHA256: bool = _env_bool("VERIFY_DATASET_SHA256", True)
 ALLOW_DEMO_DATA: bool = _env_bool("ALLOW_DEMO_DATA", False)
+
+# ── Supabase Storage (remote source for the canonical dataset) ────────────────
+# Server-side only. The service-role key is never logged, returned or sent to the frontend.
+SUPABASE_URL: str = _env_str("SUPABASE_URL", "").rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY: str = _env_str("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_BUCKET: str = _env_str("SUPABASE_BUCKET", "")
+SUPABASE_OBJECT_PATH: str = _env_str("SUPABASE_OBJECT_PATH", "")
+# Local cache for the downloaded dataset (ephemeral on Render; re-downloaded after a restart).
+DATASET_CACHE_DIR: Path = _env_path("DATASET_CACHE_DIR", BASE_DIR / ".dataset_cache")
+DATASET_DOWNLOAD_TIMEOUT_SECONDS: float = _env_float("DATASET_DOWNLOAD_TIMEOUT_SECONDS", 120.0)
 
 TVM_DATA_DIR: Path = _env_path("TVM_DATA_DIR", BASE_DIR.parent.parent / "TVM-20260916T221011Z-1-001" / "TVM")
 TVM_DATA_PATH: Path = TVM_DATA_DIR / "tvm_master_CORRECTED.csv"

@@ -5,6 +5,8 @@ __pycache__/
 .venv/
 venv/
 .env
+# Dataset downloaded from Supabase Storage at startup (never commit)
+.dataset_cache/
 # Re-include required files in case a parent .gitignore excludes *.csv, *.joblib, data/ …
 !data/
 !data/phase6/

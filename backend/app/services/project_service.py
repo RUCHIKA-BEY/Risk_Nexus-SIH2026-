@@ -15,13 +15,21 @@ import pandas as pd
 
 from app.config import (
     ALLOW_DEMO_DATA,
+    CANONICAL_DATA_FILENAME,
     CANONICAL_DATA_PATH,
     CANONICAL_DATA_SHA256,
+    DATASET_CACHE_DIR,
+    DATASET_DOWNLOAD_TIMEOUT_SECONDS,
     DEMO_DATA_DIR,
+    SUPABASE_BUCKET,
+    SUPABASE_OBJECT_PATH,
+    SUPABASE_SERVICE_ROLE_KEY,
+    SUPABASE_URL,
     VERIFY_DATASET_SHA256,
     SCHEDULE_ALERT_TOP_N,
     SCHEDULE_ALERT_TOP_PERCENT,
 )
+from app.services.dataset_download import DatasetDownloadError, download_supabase_object
 from app.schemas import (
     ProjectDetail,
     ProjectSummary,
@@ -84,11 +92,72 @@ def get_dataset_info() -> dict[str, Any]:
     return dict(_dataset_info)
 
 
+def _supabase_settings() -> dict[str, str]:
+    return {
+        "SUPABASE_URL": SUPABASE_URL,
+        "SUPABASE_SERVICE_ROLE_KEY": SUPABASE_SERVICE_ROLE_KEY,
+        "SUPABASE_BUCKET": SUPABASE_BUCKET,
+        "SUPABASE_OBJECT_PATH": SUPABASE_OBJECT_PATH,
+    }
+
+
+def _resolve_canonical_dataset() -> tuple[Optional[Path], Optional[str]]:
+    """
+    Locate the canonical dataset, downloading it once if needed.
+
+    Order:
+      1. local CSV at CANONICAL_DATA_PATH           -> ("local")
+      2. previously downloaded copy in the cache    -> ("cache"), reused if its hash is valid
+      3. Supabase Storage -> cache (atomic)          -> ("supabase")
+    Returns (None, None) when there is no local file and Supabase is not configured
+    at all, so the caller can apply ALLOW_DEMO_DATA or fail. Raises
+    DatasetConfigurationError if Supabase is partially configured or the download fails.
+    """
+    if CANONICAL_DATA_PATH.exists():
+        return CANONICAL_DATA_PATH, "local"
+
+    cached = DATASET_CACHE_DIR / CANONICAL_DATA_FILENAME
+    if cached.exists():
+        if not VERIFY_DATASET_SHA256 or _sha256(cached) == CANONICAL_DATA_SHA256:
+            logger.info("Using cached canonical dataset %s (no download).", cached)
+            return cached, "cache"
+        logger.warning("Cached dataset %s failed SHA-256 verification; downloading again.", cached)
+        cached.unlink(missing_ok=True)
+
+    settings = _supabase_settings()
+    missing = [name for name, value in settings.items() if not value]
+    if len(missing) == len(settings):
+        return None, None
+    if missing:
+        raise DatasetConfigurationError(
+            f"Canonical dataset not found at {CANONICAL_DATA_PATH}, and Supabase Storage is not fully "
+            f"configured: missing {', '.join(missing)}."
+        )
+    try:
+        download_supabase_object(
+            supabase_url=SUPABASE_URL,
+            service_role_key=SUPABASE_SERVICE_ROLE_KEY,
+            bucket=SUPABASE_BUCKET,
+            object_path=SUPABASE_OBJECT_PATH,
+            destination=cached,
+            expected_sha256=CANONICAL_DATA_SHA256 if VERIFY_DATASET_SHA256 else None,
+            timeout_seconds=DATASET_DOWNLOAD_TIMEOUT_SECONDS,
+        )
+    except DatasetDownloadError as e:
+        raise DatasetConfigurationError(
+            f"Canonical dataset not found at {CANONICAL_DATA_PATH}, and downloading it from Supabase "
+            f"Storage failed: {e}"
+        ) from None
+    return cached, "supabase"
+
+
 def load_demo_data() -> None:
     """
     Startup loader:
     1. Loads the canonical dataset (backend/data/phase6/enhanced_phase6_corrected.csv
-       by default) and verifies its SHA-256 against the frozen manifests.
+       by default; if absent, the cached copy or a one-time download from Supabase
+       Storage, see _resolve_canonical_dataset) and verifies its SHA-256 against
+       the frozen manifests.
        A missing or altered dataset raises DatasetConfigurationError and stops
        startup. The 4-project demo file is used ONLY when ALLOW_DEMO_DATA=true.
     2. Builds an optimized project summary index for sub-millisecond lookups.
@@ -96,10 +165,10 @@ def load_demo_data() -> None:
     """
     global _full_df, _summary_df, _demo_manifest, _demo_pids, _dataset_info
 
-    data_path = CANONICAL_DATA_PATH
+    data_path, source = _resolve_canonical_dataset()
     mode = "canonical"
     sha = None
-    if data_path.exists():
+    if data_path is not None:
         if VERIFY_DATASET_SHA256:
             sha = _sha256(data_path)
             if sha != CANONICAL_DATA_SHA256:
@@ -110,6 +179,7 @@ def load_demo_data() -> None:
     elif ALLOW_DEMO_DATA:
         data_path = DEMO_DATA_DIR / "demo_rows.csv"
         mode = "demo_only"
+        source = "demo"
         if not data_path.exists():
             raise DatasetConfigurationError(f"ALLOW_DEMO_DATA=true but {data_path} does not exist.")
         logger.warning(
@@ -118,9 +188,11 @@ def load_demo_data() -> None:
         )
     else:
         raise DatasetConfigurationError(
-            f"Canonical dataset not found at {data_path}. It is required. Place "
-            "enhanced_phase6_corrected.csv at backend/data/phase6/ or set CANONICAL_DATA_DIR "
-            "to the folder containing it. (ALLOW_DEMO_DATA=true enables a 4-project dev fallback.)"
+            f"Canonical dataset not found at {CANONICAL_DATA_PATH}. It is required. Place "
+            "enhanced_phase6_corrected.csv at backend/data/phase6/, set CANONICAL_DATA_DIR "
+            "to the folder containing it, or set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, "
+            "SUPABASE_BUCKET and SUPABASE_OBJECT_PATH to download it from Supabase Storage. "
+            "(ALLOW_DEMO_DATA=true enables a 4-project dev fallback.)"
         )
 
     logger.info("Loading dataset from %s ...", data_path)
@@ -131,6 +203,7 @@ def load_demo_data() -> None:
     _full_df = df
     _dataset_info = {
         "mode": mode,
+        "source": source,
         "path": str(data_path),
         "sha256": sha,
         "sha256_verified": sha is not None and sha == CANONICAL_DATA_SHA256,
