@@ -1,7 +1,7 @@
 """
 Model service: loads, hashes, caches, and scores all pipeline artifacts.
 Models are loaded ONCE during FastAPI lifespan startup.
-schedule_e3_xgb is never loaded (disabled/rejected).
+Only models listed as enabled in model_registry.json are loaded (the six frozen Phase 6 models).
 """
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from typing import Any, Optional
 import joblib
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 
 from app.config import MODEL_ARTIFACT_DIR
 from app.services.registry_service import get_all_enabled_model_ids, get_model_config
@@ -21,7 +22,7 @@ from app.services.registry_service import get_all_enabled_model_ids, get_model_c
 logger = logging.getLogger(__name__)
 
 # ── In-memory model store ──────────────────────────────────────────────────────
-_models: dict[str, Any] = {}  # model_id -> fitted sklearn Pipeline
+_models: dict[str, Any] = {}  # model_id -> frozen Phase 6 model bundle
 _loaded = False
 
 # Columns that must NEVER be fed to any model
@@ -39,16 +40,13 @@ OBSOLETE_TIMELINE_FIELDS = frozenset({
     "project_age_months", "elapsed_planned_ratio", "planned_remaining_months",
 })
 
-# The exact 17-feature order for official CUF XGBoost models
+# The exact corrected COMMON feature set used by every frozen production XGBoost bundle.
 OFFICIAL_XGB_FEATURES: list[str] = [
-    "original_cost", "current_forecast_cost", "cumulative_expenditure",
-    "cumulative_to_original_ratio", "forecast_to_original_ratio",
-    "physical_progress_pct", "physical_progress_available",
-    "planned_duration_months", "reported_delay_months",
-    "exp_change_1m", "progress_change_1m", "progress_rate",
-    "n_cost_revisions_to_date", "n_schedule_revisions_to_date",
-    "planned_completion_available", "months_from_original_commissioning",
-    "sector_std",
+    "original_cost", "planned_duration_months", "cumulative_expenditure",
+    "cumulative_to_original_ratio", "months_from_original_commissioning",
+    "exp_change_1m", "exp_change_3m", "exp_slope_3m",
+    "n_cost_revisions_to_date", "n_schedule_revisions_to_date", "sector_std",
+    "expenditure_available", "planned_completion_available", "sector_available",
 ]
 
 
@@ -67,7 +65,7 @@ def load_all_models() -> None:
 
     for model_id in enabled_ids:
         cfg = get_model_config(model_id)
-        artifact_rel = cfg.get("artifact_path", f"models/{model_id}/model.joblib")
+        artifact_rel = cfg["artifact_path"]  # required; no fallback to old-generation paths
         artifact_path = MODEL_ARTIFACT_DIR / artifact_rel
 
         if not artifact_path.exists():
@@ -84,8 +82,32 @@ def load_all_models() -> None:
                 )
             logger.warning("Hash mismatch for non-official model %s (expected %s got %s)", model_id, expected_hash, actual_hash)
 
-        pipeline = joblib.load(artifact_path)
-        _models[model_id] = pipeline
+        bundle = joblib.load(artifact_path)
+        artifact_format = cfg.get("artifact_format", "frozen_joblib")
+
+        if artifact_format == "portable_xgboost_v1":
+            required = {"features", "preprocessor", "calibrator"}
+            if not isinstance(bundle, dict) or not required.issubset(bundle):
+                raise ValueError(f"{model_id} has an invalid portable support bundle")
+
+            booster_path = MODEL_ARTIFACT_DIR / cfg["booster_path"]
+            if not booster_path.exists():
+                raise FileNotFoundError(f"Portable booster not found: {booster_path}")
+            actual_booster_hash = _sha256_file(booster_path)
+            expected_booster_hash = cfg.get("booster_sha256")
+            if expected_booster_hash and actual_booster_hash != expected_booster_hash:
+                raise ValueError(
+                    f"HASH MISMATCH for booster {model_id}: "
+                    f"expected={expected_booster_hash} got={actual_booster_hash}"
+                )
+            booster = xgb.Booster()
+            booster.load_model(booster_path)
+            bundle["booster"] = booster
+        else:
+            required = {"features", "preprocessor", "estimator", "calibrator"}
+            if not isinstance(bundle, dict) or not required.issubset(bundle):
+                raise ValueError(f"{model_id} is not a supported frozen Phase 6 model bundle")
+        _models[model_id] = bundle
         logger.info("Loaded %s (hash OK: %s)", model_id, actual_hash[:12])
 
     # Verify official models are present
@@ -105,6 +127,14 @@ def get_pipeline(model_id: str) -> Any:
     if model_id not in _models:
         raise KeyError(f"Model {model_id} not loaded. Check enabled status.")
     return _models[model_id]
+
+
+def get_model_bundle(model_id: str) -> dict[str, Any]:
+    """Return a frozen bundle containing features, preprocessing, estimator and calibrator."""
+    bundle = get_pipeline(model_id)
+    if not isinstance(bundle, dict):
+        raise TypeError(f"{model_id} is not a frozen model bundle")
+    return bundle
 
 
 def score_row(model_id: str, feature_row: dict[str, Any]) -> float:
@@ -128,8 +158,13 @@ def score_row(model_id: str, feature_row: dict[str, Any]) -> float:
     ordered_features = cfg.get("ordered_raw_input_features", [])
     row_df = pd.DataFrame([{col: clean.get(col, np.nan) for col in ordered_features}])
 
-    pipeline = get_pipeline(model_id)
-    prob = float(pipeline.predict_proba(row_df)[0, 1])
+    bundle = get_model_bundle(model_id)
+    transformed = bundle["preprocessor"].transform(row_df)
+    if "booster" in bundle:
+        raw = bundle["booster"].predict(xgb.DMatrix(transformed))
+    else:
+        raw = bundle["estimator"].predict_proba(transformed)[:, 1]
+    prob = float(bundle["calibrator"].predict_proba(raw.reshape(-1, 1))[0, 1])
     return prob
 
 
@@ -153,6 +188,11 @@ def score_dataframe(model_id: str, df: pd.DataFrame) -> np.ndarray:
     input_df = pd.DataFrame({col: clean_df.get(col, pd.Series([np.nan] * len(clean_df))) for col in ordered_features})
     input_df = input_df.reset_index(drop=True)
 
-    pipeline = get_pipeline(model_id)
-    probs = pipeline.predict_proba(input_df)[:, 1]
+    bundle = get_model_bundle(model_id)
+    transformed = bundle["preprocessor"].transform(input_df)
+    if "booster" in bundle:
+        raw = bundle["booster"].predict(xgb.DMatrix(transformed))
+    else:
+        raw = bundle["estimator"].predict_proba(transformed)[:, 1]
+    probs = bundle["calibrator"].predict_proba(raw.reshape(-1, 1))[:, 1]
     return probs

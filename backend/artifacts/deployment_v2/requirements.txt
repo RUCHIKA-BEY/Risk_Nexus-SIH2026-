@@ -1,7 +1,0 @@
-# Exact environment used to train and verify this package (Python 3.11.15)
-xgboost==3.2.0
-scikit-learn==1.8.0
-pandas==3.0.2
-numpy==2.4.4
-joblib==1.5.3
-shap==0.51.0

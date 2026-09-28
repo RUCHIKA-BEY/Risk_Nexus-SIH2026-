@@ -1,0 +1,17 @@
+# Backend-local ignores. The frozen artifacts and the bundled dataset MUST be committed.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+# Re-include required files in case a parent .gitignore excludes *.csv, *.joblib, data/ …
+!data/
+!data/phase6/
+!data/phase6/enhanced_phase6_corrected.csv
+!artifacts/
+!artifacts/**
+!demo_data/
+!demo_data/**
+!tests/fixtures/
+!tests/fixtures/**

@@ -19,7 +19,8 @@ def fcm_simulate(req: FCMSimulationRequest):
     """
     Run a Fuzzy Cognitive Map scenario simulation.
     FCM is a SCENARIO SIMULATOR only — it never modifies or replaces official XGBoost predictions.
-    All weights are expert-defined and stored in backend/app/fcm/fcm_weights.json.
+    Current weights are a clearly labelled draft stored in backend/app/fcm/fcm_weights.json
+    and must be domain-approved before any operational interpretation.
     """
     try:
         result = run_fcm_simulation(

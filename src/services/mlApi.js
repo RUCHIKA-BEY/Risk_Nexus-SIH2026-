@@ -159,7 +159,6 @@ export async function fetchAnalysisPrediction(projectId, asOf) {
 /**
  * Original/Legacy CUF Logistic Regression Benchmark.
  * benchmark_only=true; may_replace_xgboost_predictions=false.
- * The panel_tenure_warning MUST be displayed with these results.
  */
 export async function fetchBenchmarkPrediction(projectId, asOf) {
   const result = await apiFetch('/predict/benchmark', {
@@ -167,9 +166,6 @@ export async function fetchBenchmarkPrediction(projectId, asOf) {
     body: JSON.stringify({ project_id: projectId, as_of: asOf }),
   });
   result.disclaimer = result.disclaimer || RISK_SCORE_DISCLAIMER;
-  result.panel_tenure_warning =
-    result.panel_tenure_warning ||
-    "These LR models use 'project_age_months' which measures panel tenure, NOT true project age.";
   return result;
 }
 

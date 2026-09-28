@@ -1,0 +1,1740 @@
+{
+ "AssessRequest": {
+  "properties": {
+   "as_of": {
+    "description": "Reporting month T, 'YYYY-MM' or 'YYYY-MM-DD'. Only rows <= T are used.",
+    "title": "As Of",
+    "type": "string"
+   },
+   "include_benchmark": {
+    "default": true,
+    "title": "Include Benchmark",
+    "type": "boolean"
+   },
+   "include_fcm": {
+    "default": true,
+    "title": "Include Fcm",
+    "type": "boolean"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   },
+   "scenario_overrides": {
+    "additionalProperties": {
+     "type": "number"
+    },
+    "title": "Scenario Overrides",
+    "type": "object"
+   },
+   "top_n": {
+    "default": 5,
+    "maximum": 14,
+    "minimum": 1,
+    "title": "Top N",
+    "type": "integer"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of"
+  ],
+  "title": "AssessRequest",
+  "type": "object"
+ },
+ "ExplainRequest": {
+  "properties": {
+   "as_of": {
+    "description": "Reporting month T, 'YYYY-MM' or 'YYYY-MM-DD'. Only rows <= T are used.",
+    "title": "As Of",
+    "type": "string"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   },
+   "targets": {
+    "items": {
+     "enum": [
+      "cost",
+      "schedule",
+      "compound"
+     ],
+     "type": "string"
+    },
+    "title": "Targets",
+    "type": "array"
+   },
+   "top_n": {
+    "default": 5,
+    "maximum": 14,
+    "minimum": 1,
+    "title": "Top N",
+    "type": "integer"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of"
+  ],
+  "title": "ExplainRequest",
+  "type": "object"
+ },
+ "FCMGraphResponse": {
+  "$defs": {
+   "FCMEdgeState": {
+    "properties": {
+     "basis": {
+      "title": "Basis",
+      "type": "string"
+     },
+     "influence": {
+      "description": "final_state(source) * weight",
+      "title": "Influence",
+      "type": "number"
+     },
+     "relationship": {
+      "enum": [
+       "positive",
+       "negative"
+      ],
+      "title": "Relationship",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "source",
+     "target",
+     "weight",
+     "relationship",
+     "basis",
+     "influence"
+    ],
+    "title": "FCMEdgeState",
+    "type": "object"
+   }
+  },
+  "properties": {
+   "activation": {
+    "title": "Activation",
+    "type": "string"
+   },
+   "config_version": {
+    "title": "Config Version",
+    "type": "string"
+   },
+   "damping": {
+    "title": "Damping",
+    "type": "number"
+   },
+   "disclaimer": {
+    "default": "Expert-defined DRAFT fuzzy cognitive map (not domain-approved). It is a scenario and reasoning aid, separate from the ML prediction. Its states are not probabilities and its pathways do not establish causality.",
+    "title": "Disclaimer",
+    "type": "string"
+   },
+   "edges": {
+    "items": {
+     "$ref": "#/$defs/FCMEdgeState"
+    },
+    "title": "Edges",
+    "type": "array"
+   },
+   "input_normalisation": {
+    "additionalProperties": {
+     "type": "string"
+    },
+    "title": "Input Normalisation",
+    "type": "object"
+   },
+   "node_order": {
+    "items": {
+     "type": "string"
+    },
+    "title": "Node Order",
+    "type": "array"
+   },
+   "nodes": {
+    "items": {
+     "additionalProperties": true,
+     "type": "object"
+    },
+    "title": "Nodes",
+    "type": "array"
+   },
+   "review_status": {
+    "title": "Review Status",
+    "type": "string"
+   },
+   "update_rule": {
+    "title": "Update Rule",
+    "type": "string"
+   },
+   "weight_matrix": {
+    "description": "W[i][j] = weight of edge node_order[i] -> node_order[j]",
+    "items": {
+     "items": {
+      "type": "number"
+     },
+     "type": "array"
+    },
+    "title": "Weight Matrix",
+    "type": "array"
+   }
+  },
+  "required": [
+   "config_version",
+   "review_status",
+   "nodes",
+   "edges",
+   "node_order",
+   "weight_matrix",
+   "update_rule",
+   "activation",
+   "damping",
+   "input_normalisation"
+  ],
+  "title": "FCMGraphResponse",
+  "type": "object"
+ },
+ "FCMRequest": {
+  "properties": {
+   "as_of": {
+    "description": "Reporting month T, 'YYYY-MM' or 'YYYY-MM-DD'. Only rows <= T are used.",
+    "title": "As Of",
+    "type": "string"
+   },
+   "max_pathways": {
+    "default": 5,
+    "maximum": 20,
+    "minimum": 1,
+    "title": "Max Pathways",
+    "type": "integer"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   },
+   "scenario_overrides": {
+    "additionalProperties": {
+     "type": "number"
+    },
+    "description": "Input-concept overrides in [0, 1]. Output concepts cannot be overridden.",
+    "title": "Scenario Overrides",
+    "type": "object"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of"
+  ],
+  "title": "FCMRequest",
+  "type": "object"
+ },
+ "ModelInfoResponse": {
+  "$defs": {
+   "ModelInfoEntry": {
+    "properties": {
+     "artifact_sha256": {
+      "title": "Artifact Sha256",
+      "type": "string"
+     },
+     "feature_set": {
+      "enum": [
+       "COMMON",
+       "ENHANCED"
+      ],
+      "title": "Feature Set",
+      "type": "string"
+     },
+     "model_id": {
+      "title": "Model Id",
+      "type": "string"
+     },
+     "model_name": {
+      "enum": [
+       "XGBoost",
+       "LogisticRegression"
+      ],
+      "title": "Model Name",
+      "type": "string"
+     },
+     "ordered_features": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Ordered Features",
+      "type": "array"
+     },
+     "role": {
+      "enum": [
+       "official_production",
+       "benchmark_only"
+      ],
+      "title": "Role",
+      "type": "string"
+     },
+     "selected_C": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Selected C"
+     },
+     "selected_config": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Selected Config"
+     },
+     "source_frozen_sha256": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Source Frozen Sha256"
+     },
+     "target": {
+      "enum": [
+       "cost",
+       "schedule",
+       "compound"
+      ],
+      "title": "Target",
+      "type": "string"
+     },
+     "threshold": {
+      "title": "Threshold",
+      "type": "number"
+     },
+     "validation_metrics": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "title": "Validation Metrics",
+      "type": "object"
+     }
+    },
+    "required": [
+     "model_id",
+     "target",
+     "model_name",
+     "role",
+     "feature_set",
+     "threshold",
+     "ordered_features",
+     "artifact_sha256"
+    ],
+    "title": "ModelInfoEntry",
+    "type": "object"
+   }
+  },
+  "properties": {
+   "benchmark": {
+    "items": {
+     "$ref": "#/$defs/ModelInfoEntry"
+    },
+    "title": "Benchmark",
+    "type": "array"
+   },
+   "dataset": {
+    "additionalProperties": true,
+    "description": "Loaded scoring dataset: mode, path, sha256, sha256_verified, rows, projects",
+    "title": "Dataset",
+    "type": "object"
+   },
+   "excluded_legacy_features": {
+    "items": {
+     "type": "string"
+    },
+    "title": "Excluded Legacy Features",
+    "type": "array"
+   },
+   "production": {
+    "items": {
+     "$ref": "#/$defs/ModelInfoEntry"
+    },
+    "title": "Production",
+    "type": "array"
+   },
+   "registry_version": {
+    "title": "Registry Version",
+    "type": "string"
+   },
+   "routing_source": {
+    "title": "Routing Source",
+    "type": "string"
+   },
+   "runtime": {
+    "additionalProperties": {
+     "type": "string"
+    },
+    "title": "Runtime",
+    "type": "object"
+   }
+  },
+  "required": [
+   "registry_version",
+   "routing_source",
+   "production",
+   "benchmark",
+   "excluded_legacy_features",
+   "dataset",
+   "runtime"
+  ],
+  "title": "ModelInfoResponse",
+  "type": "object"
+ },
+ "RiskAssessResponse": {
+  "$defs": {
+   "Contributor": {
+    "properties": {
+     "abs_shap_value": {
+      "title": "Abs Shap Value",
+      "type": "number"
+     },
+     "direction": {
+      "enum": [
+       "increasing_risk",
+       "decreasing_risk"
+      ],
+      "title": "Direction",
+      "type": "string"
+     },
+     "feature": {
+      "title": "Feature",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "rank": {
+      "description": "1 = largest |SHAP| among all raw features for this prediction",
+      "title": "Rank",
+      "type": "integer"
+     },
+     "shap_value": {
+      "title": "Shap Value",
+      "type": "number"
+     },
+     "value": {
+      "anyOf": [
+       {},
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Raw input value at T; null means missing (imputed by the frozen preprocessor)",
+      "title": "Value"
+     },
+     "value_missing": {
+      "title": "Value Missing",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "rank",
+     "feature",
+     "label",
+     "value_missing",
+     "shap_value",
+     "abs_shap_value",
+     "direction"
+    ],
+    "title": "Contributor",
+    "type": "object"
+   },
+   "ExplanationBlock": {
+    "properties": {
+     "disclaimer": {
+      "default": "SHAP values are exact TreeSHAP contributions to the frozen XGBoost raw score (log-odds) before sigmoid calibration. Direction and ranking carry over to the calibrated probability because calibration is monotonic increasing, but SHAP values are not probability points. SHAP describes model associations, not causes.",
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "explanations": {
+      "additionalProperties": {
+       "$ref": "#/$defs/TargetExplanation"
+      },
+      "title": "Explanations",
+      "type": "object"
+     },
+     "method": {
+      "default": "XGBoost native TreeSHAP (pred_contribs); identical to shap.TreeExplainer",
+      "title": "Method",
+      "type": "string"
+     }
+    },
+    "required": [
+     "explanations"
+    ],
+    "title": "ExplanationBlock",
+    "type": "object"
+   },
+   "FCMBlock": {
+    "properties": {
+     "activated_concepts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Activated Concepts",
+      "type": "array"
+     },
+     "activation_threshold": {
+      "title": "Activation Threshold",
+      "type": "number"
+     },
+     "config_version": {
+      "title": "Config Version",
+      "type": "string"
+     },
+     "converged": {
+      "title": "Converged",
+      "type": "boolean"
+     },
+     "disclaimer": {
+      "default": "Expert-defined DRAFT fuzzy cognitive map (not domain-approved). It is a scenario and reasoning aid, separate from the ML prediction. Its states are not probabilities and its pathways do not establish causality.",
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "edges": {
+      "items": {
+       "$ref": "#/$defs/FCMEdgeState"
+      },
+      "title": "Edges",
+      "type": "array"
+     },
+     "iterations": {
+      "title": "Iterations",
+      "type": "integer"
+     },
+     "nodes": {
+      "items": {
+       "$ref": "#/$defs/FCMNodeState"
+      },
+      "title": "Nodes",
+      "type": "array"
+     },
+     "pathway_note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Pathway Note"
+     },
+     "propagated_risk_state": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "title": "Propagated Risk State",
+      "type": "object"
+     },
+     "protective_pathways": {
+      "items": {
+       "$ref": "#/$defs/FCMPathway"
+      },
+      "title": "Protective Pathways",
+      "type": "array"
+     },
+     "review_status": {
+      "title": "Review Status",
+      "type": "string"
+     },
+     "risk_increasing_pathways": {
+      "items": {
+       "$ref": "#/$defs/FCMPathway"
+      },
+      "title": "Risk Increasing Pathways",
+      "type": "array"
+     },
+     "scenario_overrides": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "title": "Scenario Overrides",
+      "type": "object"
+     }
+    },
+    "required": [
+     "config_version",
+     "review_status",
+     "activation_threshold",
+     "nodes",
+     "edges",
+     "activated_concepts",
+     "risk_increasing_pathways",
+     "protective_pathways",
+     "propagated_risk_state",
+     "scenario_overrides",
+     "iterations",
+     "converged"
+    ],
+    "title": "FCMBlock",
+    "type": "object"
+   },
+   "FCMEdgeState": {
+    "properties": {
+     "basis": {
+      "title": "Basis",
+      "type": "string"
+     },
+     "influence": {
+      "description": "final_state(source) * weight",
+      "title": "Influence",
+      "type": "number"
+     },
+     "relationship": {
+      "enum": [
+       "positive",
+       "negative"
+      ],
+      "title": "Relationship",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "source",
+     "target",
+     "weight",
+     "relationship",
+     "basis",
+     "influence"
+    ],
+    "title": "FCMEdgeState",
+    "type": "object"
+   },
+   "FCMNodeState": {
+    "properties": {
+     "activated": {
+      "title": "Activated",
+      "type": "boolean"
+     },
+     "clamped": {
+      "title": "Clamped",
+      "type": "boolean"
+     },
+     "concept": {
+      "title": "Concept",
+      "type": "string"
+     },
+     "final_state": {
+      "title": "Final State",
+      "type": "number"
+     },
+     "initial_state": {
+      "title": "Initial State",
+      "type": "number"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "role": {
+      "enum": [
+       "input",
+       "intermediate",
+       "output"
+      ],
+      "title": "Role",
+      "type": "string"
+     }
+    },
+    "required": [
+     "concept",
+     "label",
+     "role",
+     "initial_state",
+     "final_state",
+     "activated",
+     "clamped"
+    ],
+    "title": "FCMNodeState",
+    "type": "object"
+   },
+   "FCMPathway": {
+    "properties": {
+     "ends_at": {
+      "title": "Ends At",
+      "type": "string"
+     },
+     "path": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Path",
+      "type": "array"
+     },
+     "relationship": {
+      "enum": [
+       "risk_increasing",
+       "protective"
+      ],
+      "title": "Relationship",
+      "type": "string"
+     },
+     "source_state": {
+      "title": "Source State",
+      "type": "number"
+     },
+     "strength": {
+      "description": "source_state * product(weights)",
+      "title": "Strength",
+      "type": "number"
+     },
+     "weights": {
+      "items": {
+       "type": "number"
+      },
+      "title": "Weights",
+      "type": "array"
+     }
+    },
+    "required": [
+     "path",
+     "weights",
+     "source_state",
+     "strength",
+     "relationship",
+     "ends_at"
+    ],
+    "title": "FCMPathway",
+    "type": "object"
+   },
+   "MLBlock": {
+    "properties": {
+     "compound": {
+      "$ref": "#/$defs/ModelPrediction"
+     },
+     "cost": {
+      "$ref": "#/$defs/ModelPrediction"
+     },
+     "disclaimer": {
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "role": {
+      "enum": [
+       "official_production",
+       "benchmark_only"
+      ],
+      "title": "Role",
+      "type": "string"
+     },
+     "schedule": {
+      "$ref": "#/$defs/ModelPrediction"
+     }
+    },
+    "required": [
+     "role",
+     "cost",
+     "schedule",
+     "compound",
+     "disclaimer"
+    ],
+    "title": "MLBlock",
+    "type": "object"
+   },
+   "ModelPrediction": {
+    "properties": {
+     "feature_set": {
+      "enum": [
+       "COMMON",
+       "ENHANCED"
+      ],
+      "title": "Feature Set",
+      "type": "string"
+     },
+     "horizon_months": {
+      "default": 6,
+      "title": "Horizon Months",
+      "type": "integer"
+     },
+     "model_id": {
+      "title": "Model Id",
+      "type": "string"
+     },
+     "model_name": {
+      "enum": [
+       "XGBoost",
+       "LogisticRegression"
+      ],
+      "title": "Model Name",
+      "type": "string"
+     },
+     "official_prediction": {
+      "title": "Official Prediction",
+      "type": "boolean"
+     },
+     "probability": {
+      "title": "Probability",
+      "type": "number"
+     },
+     "risk": {
+      "description": "probability >= threshold (threshold is fixed server-side)",
+      "title": "Risk",
+      "type": "boolean"
+     },
+     "risk_level": {
+      "enum": [
+       "HIGH",
+       "LOW"
+      ],
+      "title": "Risk Level",
+      "type": "string"
+     },
+     "target": {
+      "enum": [
+       "cost",
+       "schedule",
+       "compound"
+      ],
+      "title": "Target",
+      "type": "string"
+     },
+     "threshold": {
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "target",
+     "model_id",
+     "model_name",
+     "feature_set",
+     "probability",
+     "threshold",
+     "risk",
+     "risk_level",
+     "official_prediction"
+    ],
+    "title": "ModelPrediction",
+    "type": "object"
+   },
+   "TargetExplanation": {
+    "properties": {
+     "additivity_error": {
+      "title": "Additivity Error",
+      "type": "number"
+     },
+     "expected_value": {
+      "description": "TreeSHAP base value (log-odds)",
+      "title": "Expected Value",
+      "type": "number"
+     },
+     "model_id": {
+      "title": "Model Id",
+      "type": "string"
+     },
+     "negative_contributors": {
+      "items": {
+       "$ref": "#/$defs/Contributor"
+      },
+      "title": "Negative Contributors",
+      "type": "array"
+     },
+     "positive_contributors": {
+      "items": {
+       "$ref": "#/$defs/Contributor"
+      },
+      "title": "Positive Contributors",
+      "type": "array"
+     },
+     "probability": {
+      "title": "Probability",
+      "type": "number"
+     },
+     "raw_margin": {
+      "description": "XGBoost raw output (log-odds) = expected_value + sum(SHAP)",
+      "title": "Raw Margin",
+      "type": "number"
+     },
+     "risk": {
+      "title": "Risk",
+      "type": "boolean"
+     },
+     "shap_sum": {
+      "title": "Shap Sum",
+      "type": "number"
+     },
+     "target": {
+      "enum": [
+       "cost",
+       "schedule",
+       "compound"
+      ],
+      "title": "Target",
+      "type": "string"
+     },
+     "threshold": {
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "target",
+     "model_id",
+     "probability",
+     "threshold",
+     "risk",
+     "expected_value",
+     "raw_margin",
+     "shap_sum",
+     "additivity_error",
+     "positive_contributors",
+     "negative_contributors"
+    ],
+    "title": "TargetExplanation",
+    "type": "object"
+   }
+  },
+  "properties": {
+   "as_of": {
+    "title": "As Of",
+    "type": "string"
+   },
+   "benchmark": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/MLBlock"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "data_row_month": {
+    "title": "Data Row Month",
+    "type": "string"
+   },
+   "fcm": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/FCMBlock"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "ml": {
+    "$ref": "#/$defs/MLBlock"
+   },
+   "note": {
+    "default": "ML, SHAP and FCM are independent layers; the FCM never alters the ML probabilities.",
+    "title": "Note",
+    "type": "string"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   },
+   "shap": {
+    "$ref": "#/$defs/ExplanationBlock"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of",
+   "data_row_month",
+   "ml",
+   "shap"
+  ],
+  "title": "RiskAssessResponse",
+  "type": "object"
+ },
+ "RiskExplainResponse": {
+  "$defs": {
+   "Contributor": {
+    "properties": {
+     "abs_shap_value": {
+      "title": "Abs Shap Value",
+      "type": "number"
+     },
+     "direction": {
+      "enum": [
+       "increasing_risk",
+       "decreasing_risk"
+      ],
+      "title": "Direction",
+      "type": "string"
+     },
+     "feature": {
+      "title": "Feature",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "rank": {
+      "description": "1 = largest |SHAP| among all raw features for this prediction",
+      "title": "Rank",
+      "type": "integer"
+     },
+     "shap_value": {
+      "title": "Shap Value",
+      "type": "number"
+     },
+     "value": {
+      "anyOf": [
+       {},
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Raw input value at T; null means missing (imputed by the frozen preprocessor)",
+      "title": "Value"
+     },
+     "value_missing": {
+      "title": "Value Missing",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "rank",
+     "feature",
+     "label",
+     "value_missing",
+     "shap_value",
+     "abs_shap_value",
+     "direction"
+    ],
+    "title": "Contributor",
+    "type": "object"
+   },
+   "ExplanationBlock": {
+    "properties": {
+     "disclaimer": {
+      "default": "SHAP values are exact TreeSHAP contributions to the frozen XGBoost raw score (log-odds) before sigmoid calibration. Direction and ranking carry over to the calibrated probability because calibration is monotonic increasing, but SHAP values are not probability points. SHAP describes model associations, not causes.",
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "explanations": {
+      "additionalProperties": {
+       "$ref": "#/$defs/TargetExplanation"
+      },
+      "title": "Explanations",
+      "type": "object"
+     },
+     "method": {
+      "default": "XGBoost native TreeSHAP (pred_contribs); identical to shap.TreeExplainer",
+      "title": "Method",
+      "type": "string"
+     }
+    },
+    "required": [
+     "explanations"
+    ],
+    "title": "ExplanationBlock",
+    "type": "object"
+   },
+   "MLBlock": {
+    "properties": {
+     "compound": {
+      "$ref": "#/$defs/ModelPrediction"
+     },
+     "cost": {
+      "$ref": "#/$defs/ModelPrediction"
+     },
+     "disclaimer": {
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "role": {
+      "enum": [
+       "official_production",
+       "benchmark_only"
+      ],
+      "title": "Role",
+      "type": "string"
+     },
+     "schedule": {
+      "$ref": "#/$defs/ModelPrediction"
+     }
+    },
+    "required": [
+     "role",
+     "cost",
+     "schedule",
+     "compound",
+     "disclaimer"
+    ],
+    "title": "MLBlock",
+    "type": "object"
+   },
+   "ModelPrediction": {
+    "properties": {
+     "feature_set": {
+      "enum": [
+       "COMMON",
+       "ENHANCED"
+      ],
+      "title": "Feature Set",
+      "type": "string"
+     },
+     "horizon_months": {
+      "default": 6,
+      "title": "Horizon Months",
+      "type": "integer"
+     },
+     "model_id": {
+      "title": "Model Id",
+      "type": "string"
+     },
+     "model_name": {
+      "enum": [
+       "XGBoost",
+       "LogisticRegression"
+      ],
+      "title": "Model Name",
+      "type": "string"
+     },
+     "official_prediction": {
+      "title": "Official Prediction",
+      "type": "boolean"
+     },
+     "probability": {
+      "title": "Probability",
+      "type": "number"
+     },
+     "risk": {
+      "description": "probability >= threshold (threshold is fixed server-side)",
+      "title": "Risk",
+      "type": "boolean"
+     },
+     "risk_level": {
+      "enum": [
+       "HIGH",
+       "LOW"
+      ],
+      "title": "Risk Level",
+      "type": "string"
+     },
+     "target": {
+      "enum": [
+       "cost",
+       "schedule",
+       "compound"
+      ],
+      "title": "Target",
+      "type": "string"
+     },
+     "threshold": {
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "target",
+     "model_id",
+     "model_name",
+     "feature_set",
+     "probability",
+     "threshold",
+     "risk",
+     "risk_level",
+     "official_prediction"
+    ],
+    "title": "ModelPrediction",
+    "type": "object"
+   },
+   "TargetExplanation": {
+    "properties": {
+     "additivity_error": {
+      "title": "Additivity Error",
+      "type": "number"
+     },
+     "expected_value": {
+      "description": "TreeSHAP base value (log-odds)",
+      "title": "Expected Value",
+      "type": "number"
+     },
+     "model_id": {
+      "title": "Model Id",
+      "type": "string"
+     },
+     "negative_contributors": {
+      "items": {
+       "$ref": "#/$defs/Contributor"
+      },
+      "title": "Negative Contributors",
+      "type": "array"
+     },
+     "positive_contributors": {
+      "items": {
+       "$ref": "#/$defs/Contributor"
+      },
+      "title": "Positive Contributors",
+      "type": "array"
+     },
+     "probability": {
+      "title": "Probability",
+      "type": "number"
+     },
+     "raw_margin": {
+      "description": "XGBoost raw output (log-odds) = expected_value + sum(SHAP)",
+      "title": "Raw Margin",
+      "type": "number"
+     },
+     "risk": {
+      "title": "Risk",
+      "type": "boolean"
+     },
+     "shap_sum": {
+      "title": "Shap Sum",
+      "type": "number"
+     },
+     "target": {
+      "enum": [
+       "cost",
+       "schedule",
+       "compound"
+      ],
+      "title": "Target",
+      "type": "string"
+     },
+     "threshold": {
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "target",
+     "model_id",
+     "probability",
+     "threshold",
+     "risk",
+     "expected_value",
+     "raw_margin",
+     "shap_sum",
+     "additivity_error",
+     "positive_contributors",
+     "negative_contributors"
+    ],
+    "title": "TargetExplanation",
+    "type": "object"
+   }
+  },
+  "properties": {
+   "as_of": {
+    "title": "As Of",
+    "type": "string"
+   },
+   "data_row_month": {
+    "title": "Data Row Month",
+    "type": "string"
+   },
+   "ml": {
+    "$ref": "#/$defs/MLBlock"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   },
+   "shap": {
+    "$ref": "#/$defs/ExplanationBlock"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of",
+   "data_row_month",
+   "ml",
+   "shap"
+  ],
+  "title": "RiskExplainResponse",
+  "type": "object"
+ },
+ "RiskFCMResponse": {
+  "$defs": {
+   "FCMBlock": {
+    "properties": {
+     "activated_concepts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Activated Concepts",
+      "type": "array"
+     },
+     "activation_threshold": {
+      "title": "Activation Threshold",
+      "type": "number"
+     },
+     "config_version": {
+      "title": "Config Version",
+      "type": "string"
+     },
+     "converged": {
+      "title": "Converged",
+      "type": "boolean"
+     },
+     "disclaimer": {
+      "default": "Expert-defined DRAFT fuzzy cognitive map (not domain-approved). It is a scenario and reasoning aid, separate from the ML prediction. Its states are not probabilities and its pathways do not establish causality.",
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "edges": {
+      "items": {
+       "$ref": "#/$defs/FCMEdgeState"
+      },
+      "title": "Edges",
+      "type": "array"
+     },
+     "iterations": {
+      "title": "Iterations",
+      "type": "integer"
+     },
+     "nodes": {
+      "items": {
+       "$ref": "#/$defs/FCMNodeState"
+      },
+      "title": "Nodes",
+      "type": "array"
+     },
+     "pathway_note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Pathway Note"
+     },
+     "propagated_risk_state": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "title": "Propagated Risk State",
+      "type": "object"
+     },
+     "protective_pathways": {
+      "items": {
+       "$ref": "#/$defs/FCMPathway"
+      },
+      "title": "Protective Pathways",
+      "type": "array"
+     },
+     "review_status": {
+      "title": "Review Status",
+      "type": "string"
+     },
+     "risk_increasing_pathways": {
+      "items": {
+       "$ref": "#/$defs/FCMPathway"
+      },
+      "title": "Risk Increasing Pathways",
+      "type": "array"
+     },
+     "scenario_overrides": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "title": "Scenario Overrides",
+      "type": "object"
+     }
+    },
+    "required": [
+     "config_version",
+     "review_status",
+     "activation_threshold",
+     "nodes",
+     "edges",
+     "activated_concepts",
+     "risk_increasing_pathways",
+     "protective_pathways",
+     "propagated_risk_state",
+     "scenario_overrides",
+     "iterations",
+     "converged"
+    ],
+    "title": "FCMBlock",
+    "type": "object"
+   },
+   "FCMEdgeState": {
+    "properties": {
+     "basis": {
+      "title": "Basis",
+      "type": "string"
+     },
+     "influence": {
+      "description": "final_state(source) * weight",
+      "title": "Influence",
+      "type": "number"
+     },
+     "relationship": {
+      "enum": [
+       "positive",
+       "negative"
+      ],
+      "title": "Relationship",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "source",
+     "target",
+     "weight",
+     "relationship",
+     "basis",
+     "influence"
+    ],
+    "title": "FCMEdgeState",
+    "type": "object"
+   },
+   "FCMNodeState": {
+    "properties": {
+     "activated": {
+      "title": "Activated",
+      "type": "boolean"
+     },
+     "clamped": {
+      "title": "Clamped",
+      "type": "boolean"
+     },
+     "concept": {
+      "title": "Concept",
+      "type": "string"
+     },
+     "final_state": {
+      "title": "Final State",
+      "type": "number"
+     },
+     "initial_state": {
+      "title": "Initial State",
+      "type": "number"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "role": {
+      "enum": [
+       "input",
+       "intermediate",
+       "output"
+      ],
+      "title": "Role",
+      "type": "string"
+     }
+    },
+    "required": [
+     "concept",
+     "label",
+     "role",
+     "initial_state",
+     "final_state",
+     "activated",
+     "clamped"
+    ],
+    "title": "FCMNodeState",
+    "type": "object"
+   },
+   "FCMPathway": {
+    "properties": {
+     "ends_at": {
+      "title": "Ends At",
+      "type": "string"
+     },
+     "path": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Path",
+      "type": "array"
+     },
+     "relationship": {
+      "enum": [
+       "risk_increasing",
+       "protective"
+      ],
+      "title": "Relationship",
+      "type": "string"
+     },
+     "source_state": {
+      "title": "Source State",
+      "type": "number"
+     },
+     "strength": {
+      "description": "source_state * product(weights)",
+      "title": "Strength",
+      "type": "number"
+     },
+     "weights": {
+      "items": {
+       "type": "number"
+      },
+      "title": "Weights",
+      "type": "array"
+     }
+    },
+    "required": [
+     "path",
+     "weights",
+     "source_state",
+     "strength",
+     "relationship",
+     "ends_at"
+    ],
+    "title": "FCMPathway",
+    "type": "object"
+   }
+  },
+  "properties": {
+   "as_of": {
+    "title": "As Of",
+    "type": "string"
+   },
+   "data_row_month": {
+    "title": "Data Row Month",
+    "type": "string"
+   },
+   "fcm": {
+    "$ref": "#/$defs/FCMBlock"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of",
+   "data_row_month",
+   "fcm"
+  ],
+  "title": "RiskFCMResponse",
+  "type": "object"
+ },
+ "RiskPredictResponse": {
+  "$defs": {
+   "MLBlock": {
+    "properties": {
+     "compound": {
+      "$ref": "#/$defs/ModelPrediction"
+     },
+     "cost": {
+      "$ref": "#/$defs/ModelPrediction"
+     },
+     "disclaimer": {
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "role": {
+      "enum": [
+       "official_production",
+       "benchmark_only"
+      ],
+      "title": "Role",
+      "type": "string"
+     },
+     "schedule": {
+      "$ref": "#/$defs/ModelPrediction"
+     }
+    },
+    "required": [
+     "role",
+     "cost",
+     "schedule",
+     "compound",
+     "disclaimer"
+    ],
+    "title": "MLBlock",
+    "type": "object"
+   },
+   "ModelPrediction": {
+    "properties": {
+     "feature_set": {
+      "enum": [
+       "COMMON",
+       "ENHANCED"
+      ],
+      "title": "Feature Set",
+      "type": "string"
+     },
+     "horizon_months": {
+      "default": 6,
+      "title": "Horizon Months",
+      "type": "integer"
+     },
+     "model_id": {
+      "title": "Model Id",
+      "type": "string"
+     },
+     "model_name": {
+      "enum": [
+       "XGBoost",
+       "LogisticRegression"
+      ],
+      "title": "Model Name",
+      "type": "string"
+     },
+     "official_prediction": {
+      "title": "Official Prediction",
+      "type": "boolean"
+     },
+     "probability": {
+      "title": "Probability",
+      "type": "number"
+     },
+     "risk": {
+      "description": "probability >= threshold (threshold is fixed server-side)",
+      "title": "Risk",
+      "type": "boolean"
+     },
+     "risk_level": {
+      "enum": [
+       "HIGH",
+       "LOW"
+      ],
+      "title": "Risk Level",
+      "type": "string"
+     },
+     "target": {
+      "enum": [
+       "cost",
+       "schedule",
+       "compound"
+      ],
+      "title": "Target",
+      "type": "string"
+     },
+     "threshold": {
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "target",
+     "model_id",
+     "model_name",
+     "feature_set",
+     "probability",
+     "threshold",
+     "risk",
+     "risk_level",
+     "official_prediction"
+    ],
+    "title": "ModelPrediction",
+    "type": "object"
+   }
+  },
+  "properties": {
+   "as_of": {
+    "title": "As Of",
+    "type": "string"
+   },
+   "benchmark": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/MLBlock"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "data_row_month": {
+    "title": "Data Row Month",
+    "type": "string"
+   },
+   "ml": {
+    "$ref": "#/$defs/MLBlock"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of",
+   "data_row_month",
+   "ml"
+  ],
+  "title": "RiskPredictResponse",
+  "type": "object"
+ },
+ "RiskRequest": {
+  "properties": {
+   "as_of": {
+    "description": "Reporting month T, 'YYYY-MM' or 'YYYY-MM-DD'. Only rows <= T are used.",
+    "title": "As Of",
+    "type": "string"
+   },
+   "project_id": {
+    "title": "Project Id",
+    "type": "string"
+   }
+  },
+  "required": [
+   "project_id",
+   "as_of"
+  ],
+  "title": "RiskRequest",
+  "type": "object"
+ }
+}

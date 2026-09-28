@@ -48,10 +48,31 @@ def setup_services():
     load_registry()
     load_all_models()
     from app.services.project_service import load_demo_data
-    try:
-        load_demo_data()
-    except FileNotFoundError:
-        pass  # Some tests don't need demo data
+    load_demo_data()  # canonical dataset is required; a missing/altered file fails the session
+
+
+# Frozen production configuration (XGBOOST_/LR_BASELINE_FREEZE_MANIFEST.json, 2026-09-24).
+PRODUCTION_ROUTING = {
+    "cost_cuf_xgb": ("cost", "COMMON", 0.25),
+    "schedule_cuf_xgb": ("schedule", "COMMON", 0.20),
+    "compound_cuf_xgb": ("compound", "COMMON", 0.20),
+}
+BENCHMARK_ROUTING = {
+    "cost_cuf_lr": ("cost", "ENHANCED", 0.25),
+    "schedule_cuf_lr": ("schedule", "COMMON", 0.20),
+    "compound_cuf_lr": ("compound", "COMMON", 0.20),
+}
+EXPECTED_14_COMMON_FEATURES = [
+    "original_cost", "planned_duration_months", "cumulative_expenditure",
+    "cumulative_to_original_ratio", "months_from_original_commissioning",
+    "exp_change_1m", "exp_change_3m", "exp_slope_3m",
+    "n_cost_revisions_to_date", "n_schedule_revisions_to_date", "sector_std",
+    "expenditure_available", "planned_completion_available", "sector_available",
+]
+OLD_GENERATION_IDS = ["schedule_e3_xgb", "cost_e3_xgb", "cost_e4_xgb", "compound_e1_xgb"]
+FROZEN_SAMPLES = json.loads(
+    (Path(__file__).parent / "fixtures" / "frozen_samples.json").read_text()
+)["samples"]
 
 
 # ── 1. Application startup ─────────────────────────────────────────────────────
@@ -76,11 +97,24 @@ class TestApplicationStartup:
 # ── 2. Artifact hash verification ──────────────────────────────────────────────
 
 class TestArtifactHashVerification:
+    # Portable support bundles loaded at runtime (preprocessor + calibrator + feature order).
     EXPECTED_HASHES = {
-        "cost_cuf_xgb": "ec8cce11d4431ad44954f1e5353ed5102e02de221e9e2de2efab437ca4638c55",
-        "schedule_cuf_xgb": "dad763030af88a47562391739cb0f5c88c0409bb91a113dade96305631bbb17c",
-        "compound_cuf_xgb": "b61f08a6b3a7b2fc9f570c954b754ca2c3b505d5f1822d4989bfcfd646f967c5",
+        "cost_cuf_xgb": "69542264208dcc57bc9e81f835875c6a109ff1a7f69c9c2af36ddbb24042403e",
+        "schedule_cuf_xgb": "b4ac82ef3bdb804c0c1f59f93c5a323d1f53418604616abac8bd04ef0632f203",
+        "compound_cuf_xgb": "c54b23fd042ea53ce860e3e3e212fa3a80bfb49ea911e79027befed14dfdc2bf",
     }
+    # Portable UBJ boosters (bit-identical outputs to the frozen training estimators).
+    EXPECTED_BOOSTER_HASHES = {
+        "cost_cuf_xgb": "d43e6e40f529bfa1274f903c5729373a070f5119ca9a72d57bf64e5103fd8927",
+        "schedule_cuf_xgb": "dff5c04e727e804ee0f08faba1a5f24024cdd26f7a718b938a5d9ad6926cf061",
+        "compound_cuf_xgb": "0e65322e9adf1e7d68228ed691629126cb71ab7be671c24a50c133d9c6f195df",
+    }
+
+    def test_booster_hashes_match(self):
+        import hashlib
+        for model_id, expected in self.EXPECTED_BOOSTER_HASHES.items():
+            path = MODEL_ARTIFACT_DIR / get_model_config(model_id)["booster_path"]
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == expected, model_id
 
     def test_official_model_hashes_match(self):
         import hashlib
@@ -98,13 +132,14 @@ class TestArtifactHashVerification:
 # ── 3. Model registry validation ───────────────────────────────────────────────
 
 class TestModelRegistryValidation:
-    def test_schedule_e3_xgb_disabled(self):
-        cfg = get_model_config("schedule_e3_xgb")
-        assert cfg["enabled"] is False
+    def test_registry_contains_only_frozen_phase6_models(self):
+        assert set(get_registry()["models"]) == set(PRODUCTION_ROUTING) | set(BENCHMARK_ROUTING)
 
-    def test_schedule_e3_xgb_rejected_by_ablation(self):
-        cfg = get_model_config("schedule_e3_xgb")
-        assert cfg["status"] == "rejected_by_ablation"
+    def test_old_generation_models_not_registered(self):
+        for old_id in OLD_GENERATION_IDS:
+            with pytest.raises(KeyError):
+                get_model_config(old_id)
+        assert get_analysis_model_ids() == []
 
     def test_official_models_exactly_three(self):
         official = get_official_model_ids()
@@ -152,57 +187,55 @@ class TestOfficialRouterMapping:
         assert cfg["official_prediction"] is True
         assert cfg["target"] == "compound"
 
-    def test_schedule_e3_not_in_any_active_route(self):
-        cfg = get_model_config("schedule_e3_xgb")
-        assert cfg["route"] == "none"
-        assert cfg["enabled"] is False
+    def test_production_routing_feature_sets_and_thresholds(self):
+        for model_id, (target, feature_set, threshold) in PRODUCTION_ROUTING.items():
+            cfg = get_model_config(model_id)
+            assert (cfg["target"], cfg["feature_set"], cfg["threshold"]) == (target, feature_set, threshold)
+        assert get_official_model_ids() == list(PRODUCTION_ROUTING)
+
+    def test_benchmark_routing_feature_sets_and_thresholds(self):
+        for model_id, (target, feature_set, threshold) in BENCHMARK_ROUTING.items():
+            cfg = get_model_config(model_id)
+            assert (cfg["target"], cfg["feature_set"], cfg["threshold"]) == (target, feature_set, threshold)
+            assert cfg["route"] == "benchmark"
 
 
-# ── 5. Rejection of disabled schedule_e3_xgb ──────────────────────────────────
+# ── 5. Old-generation model IDs are rejected everywhere ───────────────────────
 
-class TestScheduleE3Rejection:
-    def test_schedule_e3_not_loaded(self):
+class TestOldGenerationRejection:
+    @pytest.mark.parametrize("old_id", OLD_GENERATION_IDS)
+    def test_not_loaded(self, old_id):
         from app.services.model_service import _models
-        assert "schedule_e3_xgb" not in _models
+        assert old_id not in _models
 
-    def test_schedule_e3_score_raises(self):
+    @pytest.mark.parametrize("old_id", OLD_GENERATION_IDS)
+    def test_score_raises(self, old_id):
         with pytest.raises(KeyError):
-            score_row("schedule_e3_xgb", {})
+            score_row(old_id, {})
 
-    def test_schedule_e3_not_in_analysis_route(self):
-        analysis = get_analysis_model_ids()
-        assert "schedule_e3_xgb" not in analysis
+    @pytest.mark.parametrize("old_id", OLD_GENERATION_IDS)
+    def test_not_in_any_route(self, old_id):
+        assert old_id not in get_analysis_model_ids()
+        assert old_id not in get_official_model_ids()
+        assert old_id not in get_benchmark_model_ids()
 
-    def test_schedule_e3_not_in_official_route(self):
-        official = get_official_model_ids()
-        assert "schedule_e3_xgb" not in official
-
-    def test_schedule_e3_not_in_benchmark_route(self):
-        benchmark = get_benchmark_model_ids()
-        assert "schedule_e3_xgb" not in benchmark
+    def test_no_old_generation_model_files_under_artifacts(self):
+        assert not (MODEL_ARTIFACT_DIR / "models").exists(), "old-generation models must be archived"
+        assert not (MODEL_ARTIFACT_DIR / "research_archive").exists()
 
 
-# ── 6. Exact 17-feature order ──────────────────────────────────────────────────
+# ── 6. Exact 14-feature COMMON order ──────────────────────────────────────────
 
 class TestFeatureOrder:
-    EXPECTED_17_FEATURES = [
-        "original_cost", "current_forecast_cost", "cumulative_expenditure",
-        "cumulative_to_original_ratio", "forecast_to_original_ratio",
-        "physical_progress_pct", "physical_progress_available",
-        "planned_duration_months", "reported_delay_months",
-        "exp_change_1m", "progress_change_1m", "progress_rate",
-        "n_cost_revisions_to_date", "n_schedule_revisions_to_date",
-        "planned_completion_available", "months_from_original_commissioning",
-        "sector_std",
-    ]
-
     def test_official_xgb_feature_order_exact(self):
-        assert OFFICIAL_XGB_FEATURES == self.EXPECTED_17_FEATURES
+        assert OFFICIAL_XGB_FEATURES == EXPECTED_14_COMMON_FEATURES
 
-    def test_all_official_models_use_17_features(self):
+    def test_all_official_models_use_14_common_features(self):
+        from app.services.model_service import get_model_bundle
         for model_id in get_official_model_ids():
             cfg = get_model_config(model_id)
-            assert cfg["ordered_raw_input_features"] == self.EXPECTED_17_FEATURES
+            assert cfg["ordered_raw_input_features"] == EXPECTED_14_COMMON_FEATURES
+            assert list(get_model_bundle(model_id)["features"]) == EXPECTED_14_COMMON_FEATURES
 
 
 # ── 7. Obsolete field rejection for XGBoost ────────────────────────────────────
@@ -225,62 +258,48 @@ class TestObsoleteFieldRejection:
 # ── 8. Sample prediction reproduction within 1e-6 ─────────────────────────────
 
 class TestSamplePredictionReproduction:
-    def _load_sample(self, model_id: str):
-        path = MODEL_ARTIFACT_DIR / "models" / model_id / "sample_input.json"
-        with open(path) as f:
-            return json.load(f)
+    """Samples = frozen validation rows (tests/fixtures/frozen_samples.json)."""
 
-    def _load_expected(self, model_id: str):
-        path = MODEL_ARTIFACT_DIR / "models" / model_id / "expected_output.json"
-        with open(path) as f:
-            return json.load(f)
-
-    @pytest.mark.parametrize("model_id", ["cost_cuf_xgb", "schedule_cuf_xgb", "compound_cuf_xgb"])
+    @pytest.mark.parametrize("model_id", list(PRODUCTION_ROUTING) + list(BENCHMARK_ROUTING))
     def test_official_sample_prediction_within_tolerance(self, model_id):
-        sample = self._load_sample(model_id)
-        expected = self._load_expected(model_id)
-        feature_row = sample["feature_rows"][0]
-        score = score_row(model_id, feature_row)
-        expected_prob = expected["probability"]
-        assert abs(score - expected_prob) < 1e-6, (
-            f"{model_id}: got {score:.8f}, expected {expected_prob:.8f}, diff={abs(score-expected_prob):.2e}"
-        )
+        for sample in FROZEN_SAMPLES[model_id]:
+            score = score_row(model_id, sample["feature_row"])
+            expected = sample["frozen_probability"]
+            assert abs(score - expected) < 1e-9, (
+                f"{model_id}: got {score:.10f}, expected {expected:.10f}, diff={abs(score-expected):.2e}"
+            )
 
-    @pytest.mark.parametrize("model_id", ["cost_cuf_xgb", "schedule_cuf_xgb", "compound_cuf_xgb"])
+    @pytest.mark.parametrize("model_id", list(PRODUCTION_ROUTING) + list(BENCHMARK_ROUTING))
     def test_official_sample_classification(self, model_id):
-        sample = self._load_sample(model_id)
-        expected = self._load_expected(model_id)
-        feature_row = sample["feature_rows"][0]
-        score = score_row(model_id, feature_row)
-        threshold = get_model_config(model_id)["threshold"]
-        predicted_class = 1 if score >= threshold else 0
-        assert predicted_class == expected["predicted_class"], (
-            f"{model_id}: predicted {predicted_class} but expected {expected['predicted_class']}"
-        )
+        levels = []
+        for sample in FROZEN_SAMPLES[model_id]:
+            threshold = get_model_config(model_id)["threshold"]
+            assert threshold == sample["threshold"]
+            levels.append(classify(score_row(model_id, sample["feature_row"]), threshold))
+            assert levels[-1] == sample["expected_risk_level"]
+        assert set(levels) == {"HIGH", "LOW"}
 
 
 # ── 9. Threshold classification ────────────────────────────────────────────────
 
 class TestThresholdClassification:
-    def test_high_when_above_threshold(self):
-        assert classify(0.9, 0.88) == "HIGH"
-        assert classify(0.88, 0.88) == "HIGH"
+    def test_high_when_at_or_above_threshold(self):
+        assert classify(0.30, 0.25) == "HIGH"
+        assert classify(0.25, 0.25) == "HIGH"
+        assert classify(0.20, 0.20) == "HIGH"
 
     def test_low_when_below_threshold(self):
-        assert classify(0.87, 0.88) == "LOW"
-        assert classify(0.62, 0.63) == "LOW"
+        assert classify(0.2499, 0.25) == "LOW"
+        assert classify(0.1999, 0.20) == "LOW"
 
-    def test_schedule_threshold_is_0_63(self):
-        cfg = get_model_config("schedule_cuf_xgb")
-        assert cfg["threshold"] == 0.63
+    def test_schedule_threshold_is_0_20(self):
+        assert get_model_config("schedule_cuf_xgb")["threshold"] == 0.20
 
-    def test_cost_threshold_is_0_88(self):
-        cfg = get_model_config("cost_cuf_xgb")
-        assert cfg["threshold"] == 0.88
+    def test_cost_threshold_is_0_25(self):
+        assert get_model_config("cost_cuf_xgb")["threshold"] == 0.25
 
-    def test_compound_threshold_is_0_885(self):
-        cfg = get_model_config("compound_cuf_xgb")
-        assert cfg["threshold"] == 0.885
+    def test_compound_threshold_is_0_20(self):
+        assert get_model_config("compound_cuf_xgb")["threshold"] == 0.20
 
 
 # ── 10. Official/exploratory separation ────────────────────────────────────────
@@ -303,16 +322,19 @@ class TestOfficialExploratorySeparation:
 # ── 11. LR benchmark-only enforcement ─────────────────────────────────────────
 
 class TestLRBenchmarkOnly:
-    def test_lr_dashboard_label_contains_legacy(self):
+    def test_lr_dashboard_label_marks_benchmark(self):
         for mid in get_benchmark_model_ids():
-            cfg = get_model_config(mid)
-            label = cfg.get("dashboard_label", "")
-            assert "Legacy" in label or "Benchmark" in label, f"{mid} label missing Legacy/Benchmark"
+            label = get_model_config(mid).get("dashboard_label", "")
+            assert "benchmark" in label.lower(), f"{mid} label must identify it as a benchmark"
 
-    def test_lr_panel_tenure_warning_set(self):
+    def test_lr_benchmarks_exclude_panel_tenure_fields(self):
+        """The frozen Phase 6 LR models no longer use the panel-tenure timeline fields
+        (the reason the old generation needed panel_tenure_warning)."""
+        from app.services.model_service import get_model_bundle
         for mid in get_benchmark_model_ids():
-            cfg = get_model_config(mid)
-            assert cfg.get("panel_tenure_warning") is True
+            feats = set(get_model_config(mid)["ordered_raw_input_features"])
+            assert not feats & OBSOLETE_TIMELINE_FIELDS, mid
+            assert feats == set(get_model_bundle(mid)["features"])
 
 
 # ── 12. Target/leakage column rejection ────────────────────────────────────────
@@ -324,10 +346,7 @@ class TestTargetLeakageRejection:
 
     def test_score_row_strips_forbidden_columns(self):
         """Pass a row with forbidden columns; they should be ignored."""
-        sample_path = MODEL_ARTIFACT_DIR / "models" / "cost_cuf_xgb" / "sample_input.json"
-        with open(sample_path) as f:
-            sample = json.load(f)
-        feature_row = dict(sample["feature_rows"][0])
+        feature_row = dict(FROZEN_SAMPLES["cost_cuf_xgb"][0]["feature_row"])
         # Inject forbidden columns
         feature_row["cost_event_6m"] = 1
         feature_row["split_a"] = "test"
@@ -418,10 +437,7 @@ class TestFCMBoundedStates:
 
 class TestSHAPOutput:
     def _sample_feature_row(self):
-        path = MODEL_ARTIFACT_DIR / "models" / "cost_cuf_xgb" / "sample_input.json"
-        with open(path) as f:
-            sample = json.load(f)
-        return sample["feature_rows"][0]
+        return FROZEN_SAMPLES["cost_cuf_xgb"][0]["feature_row"]
 
     def test_shap_returns_drivers(self):
         from app.services.shap_service import compute_shap
@@ -675,7 +691,7 @@ class TestCanonicalDataIntegration:
         data = response.json()
         assert "items" in data
         assert "total" in data
-        assert data["total"] > 1000  # Full canonical dataset contains 13,497 projects
+        assert data["total"] == 13497  # full canonical dataset
         assert len(data["items"]) == 20
         assert data["total_pages"] > 50
 

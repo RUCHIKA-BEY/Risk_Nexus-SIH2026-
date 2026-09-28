@@ -1,0 +1,3 @@
+# Test/verification dependencies. Install with:  pip install -r requirements-dev.txt
+-r requirements.txt
+shap==0.51.0   # TreeExplainer cross-check of the served TreeSHAP values (tests only)

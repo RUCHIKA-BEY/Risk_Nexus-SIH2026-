@@ -654,10 +654,12 @@ export default function RiskAssessment() {
               benchmark only
             </span>
           </div>
-          <DisclaimerBanner text={benchmarkPred.panel_tenure_warning} />
-          <div className="mt-3">
-            <DisclaimerBanner text={benchmarkPred.disclaimer} />
-          </div>
+          {benchmarkPred.panel_tenure_warning && (
+            <div className="mb-3">
+              <DisclaimerBanner text={benchmarkPred.panel_tenure_warning} />
+            </div>
+          )}
+          <DisclaimerBanner text={benchmarkPred.disclaimer} />
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
             {benchmarkPred.benchmark_predictions?.map(pred => (
               <div key={pred.model_id} className="bg-white dark:bg-slate-700 rounded-lg border border-slate-200 p-3">

@@ -15,7 +15,7 @@ def get_priority_queue(
     """
     Operational priority review queue:
     Ranks projects within the active observation partition by schedule risk score.
-    Separates statistical risk class (schedule_risk_score >= 0.63 -> HIGH)
+    Separates statistical risk class (schedule_risk_score >= registry threshold of schedule_cuf_xgb (0.20) -> HIGH)
     from administrative review capacity.
     """
     return get_operational_priority_queue(top_n=top_n, top_pct=top_pct)

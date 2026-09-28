@@ -1,0 +1,315 @@
+{
+ "_source": "Rows from tests/fixtures/frozen_validation/*.csv (probabilities saved when the Phase 6 models were frozen, 2026-09-24). Thresholds from the freeze manifests. Feature values from backend/data/phase6/enhanced_phase6_corrected.csv at that project-month.",
+ "samples": {
+  "cost_cuf_xgb": [
+   {
+    "project_id": "N24000970",
+    "report_month": "2023-09-01",
+    "feature_row": {
+     "original_cost": 576.48,
+     "planned_duration_months": -60.0,
+     "cumulative_expenditure": 653.98,
+     "cumulative_to_original_ratio": 1.1344365806272552,
+     "months_from_original_commissioning": 68.0,
+     "exp_change_1m": 10.83000000000004,
+     "exp_change_3m": 39.24000000000001,
+     "exp_slope_3m": 9.100000000000025,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 1,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.3309824552428497,
+    "threshold": 0.25,
+    "expected_risk_level": "HIGH"
+   },
+   {
+    "project_id": "N16000421",
+    "report_month": "2023-07-01",
+    "feature_row": {
+     "original_cost": 988.0,
+     "planned_duration_months": 83.0,
+     "cumulative_expenditure": 84.87,
+     "cumulative_to_original_ratio": 0.0859008097165991,
+     "months_from_original_commissioning": -77.0,
+     "exp_change_1m": 4.800000000000011,
+     "exp_change_3m": 10.02000000000001,
+     "exp_slope_3m": 3.5,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 0,
+     "sector_std": "PETROLEUM",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.0066862171062856,
+    "threshold": 0.25,
+    "expected_risk_level": "LOW"
+   }
+  ],
+  "schedule_cuf_xgb": [
+   {
+    "project_id": "N28000089",
+    "report_month": "2023-02-01",
+    "feature_row": {
+     "original_cost": 209.0,
+     "planned_duration_months": -39.0,
+     "cumulative_expenditure": 242.87,
+     "cumulative_to_original_ratio": 1.162057416267943,
+     "months_from_original_commissioning": 40.0,
+     "exp_change_1m": 2.1599999999999966,
+     "exp_change_3m": null,
+     "exp_slope_3m": null,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 0,
+     "sector_std": "FINANCE",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.3431677280467383,
+    "threshold": 0.2,
+    "expected_risk_level": "HIGH"
+   },
+   {
+    "project_id": "N18000369",
+    "report_month": "2024-01-01",
+    "feature_row": {
+     "original_cost": 1314.0,
+     "planned_duration_months": 6.0,
+     "cumulative_expenditure": 0.0,
+     "cumulative_to_original_ratio": 0.0,
+     "months_from_original_commissioning": -3.0,
+     "exp_change_1m": null,
+     "exp_change_3m": null,
+     "exp_slope_3m": null,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 0,
+     "sector_std": "POWER",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.0192454387694468,
+    "threshold": 0.2,
+    "expected_risk_level": "LOW"
+   }
+  ],
+  "compound_cuf_xgb": [
+   {
+    "project_id": "N24001151",
+    "report_month": "2023-10-01",
+    "feature_row": {
+     "original_cost": 392.33,
+     "planned_duration_months": -58.0,
+     "cumulative_expenditure": 436.44,
+     "cumulative_to_original_ratio": 1.1124308617745269,
+     "months_from_original_commissioning": 67.0,
+     "exp_change_1m": 4.529999999999973,
+     "exp_change_3m": 4.529999999999973,
+     "exp_slope_3m": 2.2649999999999864,
+     "n_cost_revisions_to_date": 1,
+     "n_schedule_revisions_to_date": 7,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.2758028954413946,
+    "threshold": 0.2,
+    "expected_risk_level": "HIGH"
+   },
+   {
+    "project_id": "N24001285",
+    "report_month": "2024-03-01",
+    "feature_row": {
+     "original_cost": 330.78,
+     "planned_duration_months": -13.0,
+     "cumulative_expenditure": 204.26,
+     "cumulative_to_original_ratio": 0.6175101275772417,
+     "months_from_original_commissioning": 27.0,
+     "exp_change_1m": 0.0,
+     "exp_change_3m": null,
+     "exp_slope_3m": null,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 1,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.0070950190544104,
+    "threshold": 0.2,
+    "expected_risk_level": "LOW"
+   }
+  ],
+  "cost_cuf_lr": [
+   {
+    "project_id": "N24000549",
+    "report_month": "2023-02-01",
+    "feature_row": {
+     "original_cost": 1396.74,
+     "planned_duration_months": -39.0,
+     "cumulative_expenditure": 3716.3,
+     "cumulative_to_original_ratio": 2.6606956198003924,
+     "months_from_original_commissioning": 40.0,
+     "exp_change_1m": 11.390000000000327,
+     "exp_change_3m": null,
+     "exp_slope_3m": null,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 0,
+     "current_forecast_cost": 1396.74,
+     "forecast_to_original_ratio": 1.0,
+     "reported_delay_months": 41.0,
+     "forecast_change_1m": 0.0,
+     "forecast_change_3m": null,
+     "forecast_slope_3m": null,
+     "delay_change_1m": 0.0,
+     "delay_change_3m": null,
+     "delay_slope_3m": null,
+     "delay_available": 1,
+     "current_anticipated_completion_available": 1,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.443039880208707,
+    "threshold": 0.25,
+    "expected_risk_level": "HIGH"
+   },
+   {
+    "project_id": "N18000299",
+    "report_month": "2023-10-01",
+    "feature_row": {
+     "original_cost": 179.29,
+     "planned_duration_months": 3.0,
+     "cumulative_expenditure": 112.7,
+     "cumulative_to_original_ratio": 0.62859055162028,
+     "months_from_original_commissioning": 6.0,
+     "exp_change_1m": 0.0,
+     "exp_change_3m": 4.189999999999998,
+     "exp_slope_3m": 0.2450000000000045,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 5,
+     "current_forecast_cost": 179.29,
+     "forecast_to_original_ratio": 1.0,
+     "reported_delay_months": 5.0,
+     "forecast_change_1m": 0.0,
+     "forecast_change_3m": 0.0,
+     "forecast_slope_3m": 0.0,
+     "delay_change_1m": 0.0,
+     "delay_change_3m": 1.0,
+     "delay_slope_3m": 0.0,
+     "delay_available": 1,
+     "current_anticipated_completion_available": 1,
+     "sector_std": "POWER",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.0094494602791929,
+    "threshold": 0.25,
+    "expected_risk_level": "LOW"
+   }
+  ],
+  "schedule_cuf_lr": [
+   {
+    "project_id": "N24000305",
+    "report_month": "2023-05-01",
+    "feature_row": {
+     "original_cost": 454.89,
+     "planned_duration_months": -56.0,
+     "cumulative_expenditure": 498.38,
+     "cumulative_to_original_ratio": 1.0956055310074964,
+     "months_from_original_commissioning": 60.0,
+     "exp_change_1m": 28.529999999999973,
+     "exp_change_3m": 14.050000000000011,
+     "exp_slope_3m": 2.180000000000007,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 2,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.3193124553806453,
+    "threshold": 0.2,
+    "expected_risk_level": "HIGH"
+   },
+   {
+    "project_id": "N24001572",
+    "report_month": "2023-08-01",
+    "feature_row": {
+     "original_cost": 952.57,
+     "planned_duration_months": -2.0,
+     "cumulative_expenditure": 800.27,
+     "cumulative_to_original_ratio": 0.8401167368277397,
+     "months_from_original_commissioning": 7.0,
+     "exp_change_1m": 9.0,
+     "exp_change_3m": 38.069999999999936,
+     "exp_slope_3m": 10.680000000000009,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 0,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.0623854236903575,
+    "threshold": 0.2,
+    "expected_risk_level": "LOW"
+   }
+  ],
+  "compound_cuf_lr": [
+   {
+    "project_id": "N24001212",
+    "report_month": "2023-09-01",
+    "feature_row": {
+     "original_cost": 656.98,
+     "planned_duration_months": -2.0,
+     "cumulative_expenditure": 1103.0,
+     "cumulative_to_original_ratio": 1.678894334682943,
+     "months_from_original_commissioning": 10.0,
+     "exp_change_1m": 0.0,
+     "exp_change_3m": 0.0,
+     "exp_slope_3m": 0.0,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 7,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.3123419375145913,
+    "threshold": 0.2,
+    "expected_risk_level": "HIGH"
+   },
+   {
+    "project_id": "N24000883",
+    "report_month": "2023-05-01",
+    "feature_row": {
+     "original_cost": 254.3,
+     "planned_duration_months": -27.0,
+     "cumulative_expenditure": 161.26,
+     "cumulative_to_original_ratio": 0.6341329138812426,
+     "months_from_original_commissioning": 31.0,
+     "exp_change_1m": 0.0,
+     "exp_change_3m": 10.699999999999989,
+     "exp_slope_3m": 5.289999999999992,
+     "n_cost_revisions_to_date": 0,
+     "n_schedule_revisions_to_date": 1,
+     "sector_std": "ROAD TRANSPORT AND HIGHWAYS",
+     "expenditure_available": 1,
+     "planned_completion_available": 1,
+     "sector_available": 1
+    },
+    "frozen_probability": 0.0074579471364577,
+    "threshold": 0.2,
+    "expected_risk_level": "LOW"
+   }
+  ]
+ }
+}

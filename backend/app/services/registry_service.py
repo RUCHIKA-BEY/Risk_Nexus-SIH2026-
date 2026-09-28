@@ -33,18 +33,13 @@ def _validate_registry() -> None:
     """Enforce routing invariants from the spec."""
     models = _registry.get("models", {})
 
-    # schedule_e3_xgb must be disabled
-    e3 = models.get("schedule_e3_xgb", {})
-    assert not e3.get("enabled", True), "schedule_e3_xgb must have enabled=false"
-    assert e3.get("status") == "rejected_by_ablation", "schedule_e3_xgb must be rejected_by_ablation"
-
     # Official production models
     official = [m for m in models.values() if m.get("official_prediction")]
     official_ids = {m["model_id"] for m in official}
     required = {"cost_cuf_xgb", "schedule_cuf_xgb", "compound_cuf_xgb"}
     assert official_ids == required, f"Official models must be exactly {required}, got {official_ids}"
 
-    # LR benchmarks
+    # LR is visible only as a benchmark and cannot replace XGBoost.
     for lr_id in ("cost_cuf_lr", "schedule_cuf_lr", "compound_cuf_lr"):
         lr = models.get(lr_id, {})
         assert lr.get("benchmark_only"), f"{lr_id} must have benchmark_only=true"
