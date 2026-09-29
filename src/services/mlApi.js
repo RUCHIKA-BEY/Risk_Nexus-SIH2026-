@@ -224,6 +224,49 @@ export async function fetchAIExplanation({
   });
 }
 
+// ── AI upgrade: deep explanation, REX assistant, glossary ──────────────────────
+
+/**
+ * Term-by-term explanation built on the backend from the project's own values,
+ * peer comparison, base rates, SHAP drivers, FCM and trend.
+ * source = 'gemini' when GEMINI_API_KEY is set, otherwise 'rule_based'.
+ */
+export async function fetchDeepExplanation({ projectId, asOf, fcmOverrides } = {}) {
+  return apiFetch('/ai/explain/deep', {
+    method: 'POST',
+    body: JSON.stringify({
+      project_id: projectId,
+      as_of: asOf || null,
+      fcm_overrides: fcmOverrides && Object.keys(fcmOverrides).length ? fcmOverrides : null,
+    }),
+  });
+}
+
+/** Ask REX a question; projectId/asOf are optional and add project context. */
+export async function askRex({ question, projectId, asOf, page, history = [] }) {
+  return apiFetch('/ai/ask', {
+    method: 'POST',
+    body: JSON.stringify({
+      question,
+      project_id: projectId || null,
+      as_of: asOf || null,
+      page: page || null,
+      history: history.slice(-12),
+    }),
+  });
+}
+
+let _glossaryPromise = null;
+/** Glossary of every dashboard term, fetched once and cached for the session. */
+export function fetchGlossary() {
+  if (!_glossaryPromise) {
+    _glossaryPromise = apiFetch('/ai/glossary')
+      .then((d) => Object.fromEntries((d.terms || []).map((t) => [t.key, t])))
+      .catch((e) => { _glossaryPromise = null; throw e; });
+  }
+  return _glossaryPromise;
+}
+
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
 export const RISK_DISCLAIMER = RISK_SCORE_DISCLAIMER;

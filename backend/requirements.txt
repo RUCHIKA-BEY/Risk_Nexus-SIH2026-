@@ -12,6 +12,8 @@ joblib==1.6.0
 # Native XGBoost TreeSHAP is used; the separate `shap` package is unnecessary.
 python-dotenv>=1.0.0
 google-generativeai>=0.7.0
+# AI upgrade: new Gemini SDK used by ai_explainer_service (deep explanation + REX)
+google-genai>=1.0.0
 httpx>=0.27.0
 pydantic>=2.0.0
 pytest>=8.0.0  # test tooling; shap for tests is in requirements-dev.txt

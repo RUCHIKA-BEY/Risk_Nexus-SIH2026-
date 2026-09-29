@@ -54,3 +54,34 @@ async def ai_explain(req: GeminiExplainRequest):
         data_quality_warnings=req.data_quality_warnings,
     )
     return result
+
+
+# ── Deep AI explanation, REX assistant and glossary (AI upgrade) ───────────────
+from app.explainability.glossary import glossary_list  # noqa: E402
+from app.services.ai_explainer_service import (  # noqa: E402
+    AskRequest, AskResponse, DeepExplanationRequest, DeepExplanationResponse, ask, deep_explanation,
+)
+from app.services.risk_integration_service import ProjectMonthNotFound  # noqa: E402
+
+
+@router.post("/ai/explain/deep", response_model=DeepExplanationResponse, tags=["AI"])
+async def ai_explain_deep(req: DeepExplanationRequest):
+    """Term-by-term explanation grounded on the project's own values, peer comparison,
+    base rates, SHAP drivers, FCM and trend. Uses Gemini when GEMINI_API_KEY is set,
+    otherwise a deterministic rule-based explainer with the same output shape."""
+    try:
+        return await deep_explanation(req)
+    except ProjectMonthNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/ai/ask", response_model=AskResponse, tags=["AI"])
+async def ai_ask(req: AskRequest):
+    """REX assistant: answers questions about terms, pages and (optionally) a specific project."""
+    return await ask(req)
+
+
+@router.get("/ai/glossary", tags=["AI"])
+def ai_glossary():
+    """Every term shown in the dashboard with its exact meaning, used by the (i) tooltips."""
+    return {"terms": glossary_list()}
