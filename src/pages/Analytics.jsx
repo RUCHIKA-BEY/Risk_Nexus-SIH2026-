@@ -10,12 +10,15 @@ export default function Analytics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [retryKey, setRetryKey] = useState(0);
+
   useEffect(() => {
+    setLoading(true);
     fetchAnalyticsOverview()
       .then(res => setData(res))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [retryKey]);
 
   const gridColor = theme === 'dark' ? '#334155' : '#e2e8f0';
   const axisColor = theme === 'dark' ? '#94a3b8' : '#64748b';
@@ -24,13 +27,27 @@ export default function Analytics() {
     : { backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#0f172a' };
 
   if (loading) {
-    return <div className="p-12 flex justify-center"><LoadingSpinner /></div>;
+    return <div className="p-12 flex justify-center"><LoadingSpinner label="Loading analytics data…" /></div>;
   }
 
   if (!data) {
     return (
-      <div className="p-8 text-center text-slate-500">
-        Failed to load analytics data from backend.
+      <div className="p-12 flex flex-col items-center justify-center gap-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-rose-500">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Analytics data unavailable</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Could not connect to the backend API. Make sure the FastAPI server is running on port 8000.</p>
+        </div>
+        <button
+          onClick={() => setRetryKey(k => k + 1)}
+          className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Retry Connection
+        </button>
       </div>
     );
   }

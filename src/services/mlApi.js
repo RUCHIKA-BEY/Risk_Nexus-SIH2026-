@@ -40,6 +40,10 @@ export async function fetchModelsStatus() {
   return apiFetch('/models/status');
 }
 
+export async function fetchModelInfo() {
+  return apiFetch('/model-info');
+}
+
 // ── Projects ────────────────────────────────────────────────────────────────────
 
 export async function fetchMLProjects(options = {}) {

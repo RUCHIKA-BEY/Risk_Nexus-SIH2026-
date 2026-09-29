@@ -47,20 +47,34 @@ export default function AIIntelligence() {
           >
             <div className="space-y-3">
               {demoProjects.map(p => (
-                <div key={p.project_id} className="p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400">{p.project_id}</span>
-                      {p.name && <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">({p.name})</span>}
+                <div
+                  key={p.project_id}
+                  className="p-3.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors hover:border-slate-300 dark:hover:border-slate-600"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 shrink-0">
+                        {p.project_id}
+                      </span>
+                      {p.name && (
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          ({p.name})
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{p.sector || 'General'} · {p.state || ''}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 break-words">
+                      {p.sector || 'General'}{p.state ? ` · ${p.state}` : ''}
+                    </p>
                   </div>
-                  <Link
-                    to={`/projects/${encodeURIComponent(p.project_id)}/risk?as_of=${p.last_report_month || ''}`}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors"
-                  >
-                    AI Synthesis <ArrowRight size={13} />
-                  </Link>
+                  <div className="shrink-0 flex sm:self-center">
+                    <Link
+                      to={`/projects/${encodeURIComponent(p.project_id)}/risk?as_of=${p.last_report_month || ''}`}
+                      className="w-full sm:w-auto px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                      aria-label={`AI Synthesis for ${p.project_id}`}
+                    >
+                      AI Synthesis <ArrowRight size={13} />
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

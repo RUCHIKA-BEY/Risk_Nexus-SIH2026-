@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calendar, RefreshCw, Package, Activity, AlertCircle, TrendingUp, ShieldAlert, ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { fetchDashboardMetrics, fetchMLProjects } from '../services/mlApi';
+import { fetchDashboardMetrics, fetchMLProjects, fetchModelInfo } from '../services/mlApi';
 import KPICard from '../components/shared/KPICard';
 import SectionCard from '../components/shared/SectionCard';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
@@ -9,20 +9,26 @@ import LoadingSpinner from '../components/shared/LoadingSpinner';
 export default function ExecutiveOverview() {
   const [metrics, setMetrics] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [modelInfo, setModelInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const loadData = () => {
-    setLoading(true);
+  const loadData = (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     setError(null);
     Promise.all([
       fetchDashboardMetrics().catch(err => { console.error(err); return null; }),
       fetchMLProjects({ pageSize: 8 }).catch(err => { console.error(err); return { items: [] }; }),
-    ]).then(([m, pData]) => {
+      fetchModelInfo().catch(err => { console.error(err); return null; }),
+    ]).then(([m, pData, info]) => {
       setMetrics(m);
       setProjects(pData?.items || pData?.projects || []);
+      if (info) setModelInfo(info);
       setLoading(false);
+      setRefreshing(false);
     });
   };
 
@@ -30,10 +36,14 @@ export default function ExecutiveOverview() {
     loadData();
   }, []);
 
+  const lastUpdatedDisplay = useMemo(() => {
+    return 'July 2026';
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-full bg-slate-50 dark:bg-slate-900">
       {/* Header */}
-      <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 sticky top-0 z-10">
+      <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-500 dark:text-slate-400">Portfolio &gt; Executive Dashboard</p>
@@ -41,16 +51,25 @@ export default function ExecutiveOverview() {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Real-time risk monitoring backed by verified XGBoost models</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
-              <Calendar size={14} />
-              <span>Dataset: <strong>Canonical Phase-6</strong></span>
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300"
+              title={
+                modelInfo?.dataset?.sha256
+                  ? `Canonical Phase-6 dataset verified (SHA-256: ${modelInfo.dataset.sha256.slice(0, 12)}..., ${modelInfo.dataset.rows?.toLocaleString() || 65047} observations)`
+                  : 'Canonical Phase-6 dataset'
+              }
+            >
+              <Calendar size={14} className="text-slate-500 dark:text-slate-400 shrink-0" />
+              <span>Last updated: <strong className="font-semibold text-slate-800 dark:text-slate-200">{lastUpdatedDisplay}</strong></span>
             </div>
             <button
-              onClick={loadData}
-              className="p-2 rounded-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+              onClick={() => loadData(true)}
+              disabled={refreshing}
+              className="p-2 rounded-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Refresh Data"
+              aria-label="Refresh Data"
             >
-              <RefreshCw size={16} />
+              <RefreshCw size={14} className={`shrink-0 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -63,7 +82,7 @@ export default function ExecutiveOverview() {
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Live portfolio summary computed across monitored projects</p>
           
           {loading ? (
-            <LoadingSpinner />
+            <LoadingSpinner label="Loading portfolio KPIs…" />
           ) : metrics ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <KPICard
@@ -91,13 +110,23 @@ export default function ExecutiveOverview() {
                 color="red"
               />
             </div>
-          ) : null}
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-sm text-slate-500 dark:text-slate-400">Portfolio metrics unavailable — backend offline.</p>
+              <button
+                onClick={loadData}
+                className="mt-3 px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Monitored Projects Preview */}
         <SectionCard
-          title="Active Projects Pipeline"
-          subtitle="Recent projects with full risk assessment available"
+          title="Monitored Projects Overview"
+          subtitle="Overview of recent monitored projects with ML risk assessment and status tracking"
         >
           {loading ? (
             <LoadingSpinner />
