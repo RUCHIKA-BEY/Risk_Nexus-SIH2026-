@@ -15,12 +15,14 @@ import {
   fetchAnalysisPrediction,
   fetchBenchmarkPrediction,
   runFCMSimulation,
-  fetchAIExplanation,
+  fetchDeepExplanation,
   getRiskColor,
   formatRiskScore,
   getMatchBadge,
   RISK_DISCLAIMER,
 } from '../services/mlApi';
+import AIExplanationPanel from '../components/shared/AIExplanationPanel';
+import TermInfo, { useGlossary } from '../components/shared/TermInfo';
 
 // ── Sub-components ──────────────────────────────────────────────────────────────
 
@@ -86,13 +88,14 @@ function RiskScoreCard({ target, prediction, showAnimation }) {
 }
 
 function SHAPDriverPanel({ target, drivers }) {
+  const glossary = useGlossary();
   if (!drivers || drivers.length === 0) return null;
   const maxAbs = Math.max(...drivers.map(d => Math.abs(d.shap_value)), 0.001);
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
       <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 capitalize">
-        {target} — Top Drivers
+        {target} — Top Drivers <TermInfo term="top_drivers" size={12} />
       </h4>
       <p className="text-xs text-slate-400 mb-3">
         SHAP values show model associations, not proven causation.
@@ -105,8 +108,11 @@ function SHAPDriverPanel({ target, drivers }) {
             <div key={i} className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-xs text-slate-600 dark:text-slate-400 truncate max-w-[160px]" title={d.feature}>
-                    {d.feature}
+                  <span className="flex items-center gap-1 min-w-0">
+                    <span className="text-xs text-slate-600 dark:text-slate-400 truncate max-w-[180px]" title={d.feature}>
+                      {glossary[d.feature]?.label || d.feature}
+                    </span>
+                    <TermInfo term={d.feature} size={11} />
                   </span>
                   <span className={`text-xs font-medium ${isPos ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {isPos ? '↑' : '↓'} {d.shap_value.toFixed(4)}
@@ -361,13 +367,7 @@ export default function RiskAssessment() {
     if (!prediction) return;
     setAiLoading(true);
     try {
-      const explanation = await fetchAIExplanation({
-        projectId,
-        asOf: selectedMonth,
-        officialPredictions: prediction.official_predictions,
-        topDrivers: prediction.top_drivers,
-        dataQualityWarnings: prediction.data_quality_warnings,
-      });
+      const explanation = await fetchDeepExplanation({ projectId, asOf: selectedMonth });
       setAiExplanation(explanation);
     } catch (e) {
       console.error('AI error:', e);
@@ -561,56 +561,9 @@ export default function RiskAssessment() {
         </div>
       )}
 
-      {/* AI Explanation */}
+      {/* AI Explanation (deep, term-by-term) */}
       {aiExplanation && (
-        <div className="bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-violet-200 dark:border-violet-800 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-lg">✨</span>
-            <h3 className="text-base font-bold text-violet-900 dark:text-white">AI-Generated Explanation</h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 ml-auto">
-              {aiExplanation.source === 'gemini' ? 'Gemini AI' : 'Fallback'}
-            </span>
-          </div>
-          <DisclaimerBanner text={aiExplanation.disclaimer} />
-          <div className="mt-4 space-y-4">
-            <div>
-              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Summary</h4>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{aiExplanation.summary}</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Main Drivers</h4>
-                <ul className="space-y-1">
-                  {aiExplanation.main_drivers?.map((d, i) => (
-                    <li key={i} className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1.5">
-                      <span className="mt-0.5 text-rose-400">•</span>{d}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Suggested Actions</h4>
-                <ul className="space-y-1">
-                  {aiExplanation.suggested_actions?.map((a, i) => (
-                    <li key={i} className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1.5">
-                      <span className="mt-0.5 text-emerald-400">→</span>{a}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Limitations</h4>
-                <ul className="space-y-1">
-                  {aiExplanation.limitations?.map((l, i) => (
-                    <li key={i} className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
-                      <span className="mt-0.5">⚠</span>{l}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AIExplanationPanel data={aiExplanation} projectId={projectId} asOf={selectedMonth} />
       )}
 
       {/* FCM Simulator */}

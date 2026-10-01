@@ -155,6 +155,7 @@ Use `requirements.txt` alone for a runtime-only deployment. There are no system 
 | `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | CORS; add the deployed frontend URL. `*` is rejected by tests |
 | `GEMINI_API_KEY` | empty | Optional; without it `/ai/explain` returns a template. Never commit a key |
 | `GEMINI_MODEL`, `GEMINI_TIMEOUT_SECONDS` | `gemini-1.5-flash`, `15` | Gemini settings |
+| `GEMINI_EXPLAINER_MODEL`, `AI_TIMEOUT_SECONDS` | `gemini-flash-latest`, `45` | Model and timeout for `/ai/explain/deep` and the REX assistant (`/ai/ask`). Without `GEMINI_API_KEY` these use a rule-based explainer |
 | `SCHEDULE_ALERT_TOP_N`, `SCHEDULE_ALERT_TOP_PERCENT` | `50`, `10.0` | Priority-queue capacity |
 | `LOG_LEVEL`, `REQUEST_MAX_SIZE_BYTES` | `INFO`, `1048576` | Misc |
 | `TVM_DATA_DIR` | outside repo | Unused (the analysis route is empty) |
@@ -254,6 +255,7 @@ python -m pytest tests/ -rs                 # expect: 150 passed, 0 skipped
   - `POST /predict/benchmark`;
   - `POST /predict/analysis` (always an empty list: no exploratory models).
 - **FCM and AI:** `POST /simulate/fcm` (older FCM response shape), `POST /ai/explain` (Gemini or template text).
+- **AI explainer:** `POST /ai/explain/deep` (term-by-term explanation for one project-month), `POST /ai/ask` (REX assistant), `GET /ai/glossary` (terms behind the (i) tooltips).
 
 **Change in this package:** `/projects/{id}/actual-outcome` now compares outcomes with the **official predicted classes** at the registry thresholds. It previously passed no predictions, so every prediction counted as "LOW", actual events all showed as false negatives and non-events as true negatives. The response shape is unchanged.
 
