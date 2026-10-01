@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { compareProjects, fetchMLProjects, getRiskColor } from '../services/mlApi';
+import { Plus, X, ArrowRight, ShieldAlert, BarChart2 } from 'lucide-react';
+import { compareProjects, fetchMLProjects, getRiskColor, formatRiskScore } from '../services/mlApi';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 
 export default function ProjectComparison() {
@@ -49,30 +49,25 @@ export default function ProjectComparison() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Project Comparison Matrix</h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Project Comparison Matrix</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Side-by-side comparison of budget, execution progress, and official XGBoost risk predictions.
         </p>
       </div>
 
       {/* Selector Toolbar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 flex flex-wrap items-center gap-3 shadow-2xs">
-        <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-          Comparing <span className="text-slate-800 dark:text-slate-200 font-bold">{selectedIds.length} / 5</span> Projects:
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-wrap items-center gap-3">
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          Comparing {selectedIds.length} / 5 Projects:
         </div>
         <div className="flex flex-wrap gap-2 flex-1">
           {selectedIds.map(id => (
             <span
               key={id}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-mono font-semibold"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-mono font-medium"
             >
               {id}
-              <button
-                onClick={() => removeProject(id)}
-                className="hover:text-rose-600 dark:hover:text-rose-400 p-0.5 rounded cursor-pointer focus:outline-none"
-                aria-label={`Remove project ${id} from comparison`}
-                title={`Remove project ${id}`}
-              >
+              <button onClick={() => removeProject(id)} className="hover:text-rose-500">
                 <X size={13} />
               </button>
             </span>
@@ -85,7 +80,7 @@ export default function ProjectComparison() {
             onChange={(e) => {
               if (e.target.value) addProject(e.target.value);
             }}
-            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300"
           >
             <option value="">+ Add Project to Compare...</option>
             {availableProjects
@@ -98,7 +93,6 @@ export default function ProjectComparison() {
           </select>
         </div>
       </div>
-
 
       {/* Comparison Grid */}
       {loading ? (
