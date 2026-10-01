@@ -66,49 +66,50 @@ export default function ChildProjectDashboard() {
   }
 
   const tabClasses = ({ isActive }) =>
-    `px-4 py-2.5 border-b-2 font-medium text-xs transition-colors flex items-center gap-2 ${
+    `px-4 py-3 border-b-2 text-xs font-semibold transition-all flex items-center gap-2 select-none ${
       isActive
-        ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
-        : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+        ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20'
+        : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40'
     }`;
 
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
-      <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <header className="px-6 pt-4 pb-0 border-b border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 max-w-7xl mx-auto">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <Link
                 to="/projects/all"
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Back to All Projects"
+                aria-label="Back to All Projects"
               >
                 <ArrowLeft size={16} />
               </Link>
-              <h1 className="text-xl font-bold font-mono text-slate-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold font-mono text-slate-900 dark:text-white tracking-tight">
                 {project.project_id}
               </h1>
               {project.name && (
-                <span className="text-sm font-sans font-medium text-slate-600 dark:text-slate-300">
+                <span className="text-sm font-sans font-medium text-slate-600 dark:text-slate-300 truncate max-w-md">
                   — {project.name}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-3">
-              <span>Sector: <strong className="text-slate-700 dark:text-slate-300">{project.sector || '—'}</strong></span>
-              <span>•</span>
-              <span>State: <strong className="text-slate-700 dark:text-slate-300">{project.state || '—'}</strong></span>
-              <span>•</span>
-              <span>Timeline: <strong className="text-slate-700 dark:text-slate-300">{project.available_months} months</strong></span>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-2 sm:gap-3 pl-8">
+              <span>Sector: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{project.sector || '—'}</strong></span>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <span>State: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{project.state || '—'}</strong></span>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <span>Timeline: <strong className="text-slate-700 dark:text-slate-300 font-semibold tabular-nums">{project.available_months} months</strong></span>
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+          <div className="flex items-center gap-2 self-start md:self-center pl-8 md:pl-0">
+            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
               project.status === 'Completed'
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60'
             }`}>
               {project.status || 'Ongoing'}
             </span>
@@ -116,15 +117,15 @@ export default function ChildProjectDashboard() {
         </div>
 
         {/* Tab Navigation */}
-        <nav className="flex gap-2 mt-3 -mb-4 border-t border-slate-100 dark:border-slate-800 pt-1">
+        <nav className="flex gap-1 mt-4 max-w-7xl mx-auto overflow-x-auto">
           <NavLink to={`/projects/${encodeURIComponent(projectId)}/risk`} className={tabClasses}>
-            <ShieldCheck size={14} /> Risk Assessment
+            <ShieldCheck size={15} /> Risk Assessment
           </NavLink>
           <NavLink to={`/projects/${encodeURIComponent(projectId)}/trajectory`} className={tabClasses}>
-            <TrendingUp size={14} /> Risk Trajectory
+            <TrendingUp size={15} /> Risk Trajectory
           </NavLink>
           <NavLink to={`/projects/${encodeURIComponent(projectId)}/milestones`} className={tabClasses}>
-            <Clock size={14} /> Timeline & Milestones
+            <Clock size={15} /> Timeline & Milestones
           </NavLink>
         </nav>
       </header>

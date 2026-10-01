@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Download, Printer, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Printer, CheckCircle2 } from 'lucide-react';
 import { fetchMLProjects, compareProjects } from '../services/mlApi';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 
@@ -39,19 +39,20 @@ export default function Reports() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Executive Risk Reports</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Executive Risk Reports</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Generate and print official risk audit reports with verified XGBoost model outputs.
           </p>
         </div>
 
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-2xs hover:shadow-xs active:scale-[0.98] transition-all cursor-pointer self-start sm:self-center"
         >
           <Printer size={15} /> Print / Export PDF
         </button>
       </div>
+
 
       {/* Project Selector for Report */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">

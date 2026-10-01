@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Download, RefreshCw, BarChart2, PieChart as PieIcon, MapPin } from 'lucide-react';
+import { Download } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import { useTheme } from '../context/ThemeContext';
-import { fetchAnalyticsOverview, fetchDashboardMetrics, fetchMLProjects } from '../services/mlApi';
+import { fetchAnalyticsOverview, fetchDashboardMetrics } from '../services/mlApi';
 import SectionCard from '../components/shared/SectionCard';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import IndiaInteractiveMap from '../components/shared/IndiaInteractiveMap';
@@ -73,7 +73,6 @@ export default function PublicDashboard() {
   const { theme } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [metrics, setMetrics] = useState(null);
-  const [sampleProjects, setSampleProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -88,11 +87,9 @@ export default function PublicDashboard() {
     Promise.all([
       fetchAnalyticsOverview().catch(e => { console.error(e); return null; }),
       fetchDashboardMetrics().catch(e => { console.error(e); return null; }),
-      fetchMLProjects({ pageSize: 10 }).catch(e => { console.error(e); return { items: [] }; }),
-    ]).then(([an, met, projs]) => {
+    ]).then(([an, met]) => {
       setAnalytics(an);
       setMetrics(met);
-      setSampleProjects(projs?.items || projs?.projects || []);
       setLoading(false);
     });
   }, []);
@@ -100,20 +97,20 @@ export default function PublicDashboard() {
   const gridColor = theme === 'dark' ? '#334155' : '#e2e8f0';
   const axisColor = theme === 'dark' ? '#94a3b8' : '#64748b';
   const tooltipStyle = theme === 'dark'
-    ? { backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }
-    : { backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#0f172a' };
+    ? { backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', color: '#f1f5f9' }
+    : { backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', color: '#0f172a', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' };
 
   return (
-    <div className="min-h-full bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-full bg-slate-50/50 dark:bg-slate-950">
       {/* Header */}
-      <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-        <div className="flex items-center justify-between">
+      <header className="px-6 py-4 border-b border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-7xl mx-auto">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Risk<span className="text-blue-600 dark:text-blue-400">Nexus</span>
               </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+              <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
                 PUBLIC PORTAL
               </span>
             </div>
@@ -123,7 +120,7 @@ export default function PublicDashboard() {
           </div>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-2xs hover:shadow-xs active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer self-start sm:self-center"
           >
             <Download size={14} /> Print Report
           </button>
@@ -135,34 +132,34 @@ export default function PublicDashboard() {
         {loading ? (
           <div className="py-8"><LoadingSpinner /></div>
         ) : metrics ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-xs">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium">Monitored Projects</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4.5 shadow-2xs">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Monitored Projects</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1.5 tabular-nums leading-none">
                 {metrics.total_projects?.toLocaleString() || '13,497'}
               </p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">July 2026</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 font-medium">July 2026</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-xs">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium">Total Sanctioned Cost</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1 font-mono">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4.5 shadow-2xs">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Total Sanctioned Cost</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1.5 font-mono tabular-nums leading-none">
                 Rs. {((metrics.total_budget || 0) / 1000).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}K Cr
               </p>
-              <p className="text-xs text-slate-400 mt-1">Original approved budget</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Original approved budget</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-xs">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium">Cumulative Expenditure</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1 font-mono">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4.5 shadow-2xs">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Cumulative Expenditure</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1.5 font-mono tabular-nums leading-none">
                 Rs. {((metrics.total_expenditure || 0) / 1000).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}K Cr
               </p>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Disbursed to date</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">Disbursed to date</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-xs">
-              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium">Active Sectors</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4.5 shadow-2xs">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Active Sectors</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1.5 tabular-nums leading-none">
                 {metrics.sectors_count || 25}
               </p>
-              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 font-medium">
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-2 font-medium">
                 Across 36 States &amp; UTs nationwide
               </p>
             </div>
@@ -173,6 +170,7 @@ export default function PublicDashboard() {
         {analytics && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Sector-wise Budget Distribution (Responsive Adaptive Horizontal Bar) */}
+
             <SectionCard
               title="Sector-wise Budget Distribution"
               subtitle="Original budget vs. cumulative expenditure by major sector (Rs. Cr)"

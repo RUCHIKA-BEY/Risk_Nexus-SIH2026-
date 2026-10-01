@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Brain, ShieldAlert, FileText, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { fetchMLProjects, fetchModelsStatus } from '../services/mlApi';
 import SectionCard from '../components/shared/SectionCard';
@@ -25,17 +25,18 @@ export default function AIIntelligence() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">AI Intelligence & Early-Warning</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">AI Intelligence & Early-Warning</h1>
+            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
               Gemini + XGBoost SHAP
             </span>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Structured explainability and causal scenario simulation powered by deterministic ML models and Gemini reasoning.
           </p>
         </div>
       </div>
+
 
       {loading ? (
         <div className="py-16 flex justify-center"><LoadingSpinner /></div>
