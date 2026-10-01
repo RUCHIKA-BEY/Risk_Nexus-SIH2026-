@@ -1,9 +1,9 @@
 export default function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="px-6 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shrink-0">
-      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 max-w-7xl mx-auto">
-        <span>
+    <footer className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shrink-0 select-none">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 max-w-7xl mx-auto">
+        <span className="text-center sm:text-left">
           &copy; {year} Ministry of Statistics and Programme Implementation (MoSPI) — SIH 2026
         </span>
         <div className="flex items-center gap-4">
@@ -11,19 +11,9 @@ export default function Footer() {
             PAIMANA v2.0 · Phase-6 Dataset
           </span>
           <div className="flex items-center gap-3">
-            <a
-              href="#privacy"
-              className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-            >
-              Privacy Policy
-            </a>
-            <span className="opacity-40">·</span>
-            <a
-              href="#terms"
-              className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-            >
-              Terms
-            </a>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Risk Intelligence Platform
+            </span>
           </div>
         </div>
       </div>

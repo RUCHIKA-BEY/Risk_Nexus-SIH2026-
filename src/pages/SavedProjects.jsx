@@ -39,8 +39,8 @@ export default function SavedProjects() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">My Monitored Projects</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">My Monitored Projects</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Bookmarked projects saved in your browser session for quick risk evaluation.
           </p>
         </div>
@@ -49,15 +49,16 @@ export default function SavedProjects() {
       {loading ? (
         <div className="py-12 flex justify-center"><LoadingSpinner /></div>
       ) : projects.length === 0 ? (
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-12 text-center text-slate-500">
-          <Bookmark size={36} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No projects saved yet</p>
-          <p className="text-xs mt-1 text-slate-400">Browse All Projects and click on a project to bookmark it for monitoring.</p>
-          <Link to="/projects/all" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-12 text-center text-slate-500 shadow-2xs">
+          <Bookmark size={36} className="mx-auto text-slate-300 dark:text-slate-700 mb-3" />
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">No projects saved yet</p>
+          <p className="text-xs mt-1 text-slate-400 dark:text-slate-500">Browse All Projects and click on a project to bookmark it for monitoring.</p>
+          <Link to="/projects/all" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 shadow-2xs transition-all cursor-pointer">
             Browse All Projects
           </Link>
         </div>
       ) : (
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((p) => (
             <div

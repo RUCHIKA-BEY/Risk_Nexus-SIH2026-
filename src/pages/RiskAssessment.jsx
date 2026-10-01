@@ -19,16 +19,15 @@ import {
   getRiskColor,
   formatRiskScore,
   getMatchBadge,
-  RISK_DISCLAIMER,
 } from '../services/mlApi';
 
 // ── Sub-components ──────────────────────────────────────────────────────────────
 
 function DisclaimerBanner({ text }) {
   return (
-    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800">
+    <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-xl px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
       <span className="mt-0.5 flex-shrink-0">⚠️</span>
-      <span>{text}</span>
+      <span className="leading-relaxed">{text}</span>
     </div>
   );
 }
@@ -40,16 +39,16 @@ function RiskScoreCard({ target, prediction, showAnimation }) {
 
   return (
     <div
-      className={`relative rounded-xl border-2 ${colors.border} ${colors.bg} p-5 transition-all duration-500
-        ${showAnimation ? 'ring-4 ring-offset-2 ring-blue-300 animate-pulse-once' : ''}`}
+      className={`relative rounded-xl border-2 ${colors.border} ${colors.bg} p-5 transition-all duration-300 shadow-2xs
+        ${showAnimation ? 'ring-4 ring-offset-2 ring-blue-400/40 animate-pulse-once' : ''}`}
     >
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{target} Risk</p>
-          <p className="text-xs text-slate-400 mt-0.5">{prediction?.dashboard_label || 'Official XGBoost'}</p>
+          <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{target} Risk</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{prediction?.dashboard_label || 'Official XGBoost'}</p>
         </div>
         <span
-          className={`px-3 py-1 rounded-full text-xs font-bold ${colors.badge}`}
+          className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${colors.badge}`}
         >
           {prediction?.risk_class || '—'}
         </span>
@@ -58,23 +57,27 @@ function RiskScoreCard({ target, prediction, showAnimation }) {
       {score !== null ? (
         <>
           <div className="mb-2">
-            <div className="flex justify-between items-end mb-1">
-              <span className={`text-3xl font-black ${colors.text}`}>{pct}<span className="text-sm font-normal ml-0.5">pts</span></span>
-              <span className="text-xs text-slate-400">threshold: {((prediction?.threshold ?? 0) * 100).toFixed(0)}pts</span>
+            <div className="flex justify-between items-end mb-1.5">
+              <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight ${colors.text}`}>
+                {pct}<span className="text-xs font-semibold ml-0.5">pts</span>
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                threshold: {((prediction?.threshold ?? 0) * 100).toFixed(0)}pts
+              </span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2.5 relative">
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 relative overflow-hidden">
               <div
-                className={`h-2.5 rounded-full transition-all duration-700 ${prediction?.risk_class === 'HIGH' ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                className={`h-2 rounded-full transition-all duration-700 ${prediction?.risk_class === 'HIGH' ? 'bg-rose-500' : 'bg-emerald-500'}`}
                 style={{ width: `${Math.min(100, score * 100)}%` }}
               />
               {/* Threshold marker */}
               <div
-                className="absolute top-0 h-2.5 w-0.5 bg-slate-500 rounded-full"
+                className="absolute top-0 h-2 w-0.5 bg-slate-600 dark:bg-slate-300 rounded-full z-10"
                 style={{ left: `${(prediction?.threshold ?? 0) * 100}%` }}
               />
             </div>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-2">
             {prediction?.risk_class === 'HIGH' ? '↑ Above threshold — alert flagged' : '↓ Below threshold — no alert'}
           </p>
         </>
@@ -84,6 +87,7 @@ function RiskScoreCard({ target, prediction, showAnimation }) {
     </div>
   );
 }
+
 
 function SHAPDriverPanel({ target, drivers }) {
   if (!drivers || drivers.length === 0) return null;
@@ -261,7 +265,7 @@ function FCMPanel({ projectId, asOf }) {
 export default function RiskAssessment() {
   const params = useParams();
   const projectId = params.id || params.projectId || '';
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const urlAsOf = searchParams.get('as_of') || '';
 
   const [project, setProject] = useState(null);
@@ -285,8 +289,8 @@ export default function RiskAssessment() {
   useEffect(() => {
     if (!projectId) return;
     Promise.all([
-      fetchMLProjectDetail(projectId).catch(e => null),
-      fetchProjectTimeline(projectId).catch(e => null),
+      fetchMLProjectDetail(projectId).catch(() => null),
+      fetchProjectTimeline(projectId).catch(() => null),
     ]).then(([p, t]) => {
       setProject(p);
       setTimeline(t);
@@ -322,6 +326,7 @@ export default function RiskAssessment() {
       setLoading(false);
     }
   }, [projectId, selectedMonth]);
+
 
   // Auto-run assessment when month is selected
   useEffect(() => {
