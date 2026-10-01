@@ -159,7 +159,7 @@ All backend settings are read from `backend/.env`. An empty or missing value alw
 | Variable | Default | Purpose |
 |---|---|---|
 | `GEMINI_API_KEY` | empty | Turns on Gemini for the AI explanation and REX. Without it, both use the rule-based explainer. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). |
-| `GEMINI_EXPLAINER_MODEL` | `gemini-flash-latest` | Gemini model used by the AI explanation and REX. |
+| `GEMINI_EXPLAINER_MODEL` | `gemini-flash-2.5` | Gemini model used by the AI explanation and REX. |
 | `AI_TIMEOUT_SECONDS` | `45` | Timeout for each Gemini call. |
 | `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | CORS allow-list. Add your deployed frontend URL. |
 | `CANONICAL_DATA_DIR` | `backend/data/phase6` | Folder containing the dataset. |
