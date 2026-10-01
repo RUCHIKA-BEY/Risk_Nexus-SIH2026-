@@ -16,9 +16,12 @@ Fields per entry:
     verify       what a monitoring officer should check on the ground
     fmt          how to format a value: crore | ratio | pct | months | count | flag | text | score
 
-TEAM NOTE: the exact labelling rules for cost_event / schedule_event come from
-the data-preparation pipeline, which is not in this repository. Replace the
-`definition` of those two entries with the precise rule before a public demo.
+Target entries (cost_event, schedule_event, compound_event, outcome_window) state
+only facts verified against enhanced_phase6_corrected.csv: base rates, OCMS-only
+labels, complete six-month windows, and compound = cost AND schedule. When the
+exact labelling rule is confirmed from the data-preparation pipeline, append it
+to the cost_event / schedule_event definitions as a sentence starting
+"Specifically, ...".
 """
 from __future__ import annotations
 
@@ -156,24 +159,50 @@ GLOSSARY: dict[str, dict[str, Any]] = {
     # ── Targets ──
     "cost_event": {
         "label": "Cost risk (6-month cost event)", "category": "target", "unit": "", "fmt": "text",
-        "definition": "Whether a new cost-overrun event is recorded for the project in the monitoring data within the six months after the assessment month. TEAM: replace with the exact labelling rule from the data pipeline.",
-        "how_to_read": "The cost model estimates the chance of this event. It looks forward from the as-of month only.",
-        "why_it_matters": "An early cost flag gives time to scrutinise an RCE, re-phase funds or tighten contract management before the overrun is formalised.",
-        "verify": "Watch for an RCE proposal, forecast cost increase or fund re-appropriation in the coming months.",
+        "definition": "The outcome the cost model was trained to predict: whether the dataset records a new cost-overrun "
+                      "event for the project in the six months after the assessment month (1 = yes, 0 = no). Outcomes "
+                      "exist only for OCMS records from 2023 to 2025 that have a complete six-month follow-up window. "
+                      "Across those project-months a cost event occurs in about 1.9% of cases.",
+        "how_to_read": "The cost score estimates the chance of this event. Because the event is rare (about 1.9%), a score "
+                       "of 25 to 40 points is already many times the typical project's chance.",
+        "why_it_matters": "An early cost flag gives time to scrutinise an upcoming Revised Cost Estimate, re-phase funds "
+                          "or tighten contract management before the overrun is formalised.",
+        "verify": "Watch for an RCE proposal, a rise in the forecast cost or a fund re-appropriation in the coming months.",
     },
     "schedule_event": {
         "label": "Schedule risk (6-month schedule event)", "category": "target", "unit": "", "fmt": "text",
-        "definition": "Whether a new schedule-slippage event is recorded for the project within the six months after the assessment month. TEAM: replace with the exact labelling rule from the data pipeline.",
-        "how_to_read": "The schedule model estimates the chance of this event. It is tuned to catch most slippages, so it flags more projects than the cost model.",
-        "why_it_matters": "An early schedule flag lets the monitoring team chase bottlenecks (land, clearances, contractor mobilisation) before the next extension request.",
+        "definition": "The outcome the schedule model was trained to predict: whether the dataset records a new "
+                      "schedule-slippage event for the project in the six months after the assessment month (1 = yes, "
+                      "0 = no). Outcomes exist only for OCMS records from 2023 to 2025 with a complete six-month "
+                      "follow-up window. A schedule event occurs in about 6.9% of those project-months.",
+        "how_to_read": "The schedule score estimates the chance of this event. The model is tuned to catch most "
+                       "slippages (about 82% in validation), so it flags more projects than the cost model; use the "
+                       "priority queue to rank them.",
+        "why_it_matters": "An early schedule flag lets the monitoring team chase bottlenecks such as land possession, "
+                          "clearances or contractor mobilisation before the next extension request.",
         "verify": "Check pending clearances, land possession and contractor manpower on site.",
     },
     "compound_event": {
         "label": "Compound risk", "category": "target", "unit": "", "fmt": "text",
-        "definition": "A cost event and a schedule event both occurring within the same six-month window. In the data, compound is exactly 'cost event AND schedule event'.",
-        "how_to_read": "The rarest and most serious outcome: the project is both getting more expensive and slipping.",
+        "definition": "A cost event and a schedule event both recorded for the project in the same six-month window. "
+                      "In the dataset, compound is exactly 'cost event AND schedule event' for every labelled "
+                      "project-month. It occurs in about 1.4% of cases.",
+        "how_to_read": "The rarest and most serious outcome: the project is expected to become more expensive and slip "
+                       "at the same time.",
         "why_it_matters": "Projects with compound risk usually need a structured review rather than routine follow-up.",
-        "verify": "Treat as a candidate for a project review meeting with the implementing agency.",
+        "verify": "Treat as a candidate for the next project review meeting with the implementing agency.",
+    },
+    "outcome_window": {
+        "label": "Six-month outcome window", "category": "target", "unit": "months", "fmt": "text",
+        "definition": "Each prediction looks forward six months from the assessment month. A project-month has a known "
+                      "outcome only if the project kept reporting for that full window. Rows without a full window "
+                      "(including all PAIMANA records from 2025 to 2026) have no outcome label: they can be scored, "
+                      "but not checked against what actually happened.",
+        "how_to_read": "If 'Reveal Actual Outcome' shows N/A, the project-month had no complete follow-up window, so "
+                       "there is nothing to compare the prediction with.",
+        "why_it_matters": "Training and validating only on complete windows stops the models from learning that a "
+                          "project 'had no problem' simply because its later reports are missing.",
+        "verify": "Not applicable.",
     },
     # ── Scores and decisions ──
     "risk_score": {

@@ -377,7 +377,7 @@ def _match_terms(text: str) -> list[str]:
     aliases = {"shap": "shap_value", "threshold": "threshold", "fcm": "fcm", "what-if": "fcm", "precision": "precision",
                "recall": "recall", "auc": "roc_auc", "base rate": "base_rate", "score": "risk_score",
                "compound": "compound_event", "benchmark": "lr_benchmark", "outcome": "actual_outcome",
-               "as of": "as_of_month", "queue": "priority_queue", "imput": "data_quality_warning"}
+               "as of": "as_of_month", "queue": "priority_queue", "imput": "data_quality_warning","window": "outcome_window", "eligible": "outcome_window", "n/a": "outcome_window",}
     for a, k in aliases.items():
         if a in t and k not in hits:
             hits.append(k)
