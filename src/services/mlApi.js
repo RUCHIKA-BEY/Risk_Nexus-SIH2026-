@@ -9,7 +9,7 @@
  * - schedule_e3_xgb: never requested
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 const RISK_SCORE_DISCLAIMER =
   'Risk scores are uncalibrated model outputs and are not literal real-world probabilities.';
@@ -25,10 +25,23 @@ async function apiFetch(path, options = {}) {
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(err.detail || `API error ${response.status}`);
+    let message = `API error ${response.status}`;
+    if (typeof err.detail === 'string' && err.detail.trim()) {
+      message = err.detail.trim();
+    } else if (Array.isArray(err.detail) && err.detail.length > 0) {
+      message = err.detail.map(d => (typeof d === 'string' ? d : d.msg || d.message || JSON.stringify(d))).join('; ');
+    } else if (typeof err.detail === 'object' && err.detail !== null) {
+      message = err.detail.message || err.detail.msg || JSON.stringify(err.detail);
+    } else if (typeof err.message === 'string' && err.message.trim()) {
+      message = err.message.trim();
+    } else if (typeof err.error === 'string' && err.error.trim()) {
+      message = err.error.trim();
+    }
+    throw new Error(message);
   }
   return response.json();
 }
+
 
 // ── Health & Status ─────────────────────────────────────────────────────────────
 
@@ -69,6 +82,10 @@ export async function fetchMLProjectDetail(projectId) {
 
 export async function fetchProjectTimeline(projectId) {
   return apiFetch(`/projects/${encodeURIComponent(projectId)}/timeline`);
+}
+
+export async function fetchHighValueProjects(limit = 20) {
+  return apiFetch(`/projects/high-value?limit=${limit}`);
 }
 
 // ── Metrics, Analytics & Operational Priority ───────────────────────────────────

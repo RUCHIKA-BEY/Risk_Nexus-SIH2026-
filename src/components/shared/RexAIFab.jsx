@@ -12,13 +12,23 @@ import { askRex } from '../../services/mlApi';
  *   window.dispatchEvent(new CustomEvent('rex:ask', { detail: { question, projectId, asOf } }))
  */
 
-function SparkleIcon({ size = 20 }) {
+function RexMiniAvatar() {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2 l1.5 5.5 L19 9 l-5.5 1.5 L12 16 l-1.5-5.5 L5 9 l5.5-1.5Z" />
-      <path d="M18 14 l.75 2.25 L21 17 l-2.25.75 L18 20 l-.75-2.25 L15 17 l2.25-.75Z" opacity="0.8" />
-    </svg>
+    <div className="w-5 h-5 rounded-full p-[1.5px] bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+      <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 flex flex-col items-center justify-center">
+        <div className="flex items-center gap-[2px]">
+          <div className="w-[3px] h-[3px] rounded-full bg-white flex items-center justify-center">
+            <div className="w-[1.5px] h-[1.5px] rounded-full bg-slate-950" />
+          </div>
+          <div className="w-[3px] h-[3px] rounded-full bg-white flex items-center justify-center">
+            <div className="w-[1.5px] h-[1.5px] rounded-full bg-slate-950" />
+          </div>
+        </div>
+        <svg width="4" height="2" viewBox="0 0 4 2" fill="none" className="mt-[1px]">
+          <path d="M0.5 0.5 Q 2 1.8 3.5 0.5" stroke="#0b1120" strokeWidth="0.8" strokeLinecap="round" />
+        </svg>
+      </div>
+    </div>
   );
 }
 
@@ -47,13 +57,103 @@ const STARTERS = [
 
 export default function RexAIFab() {
   const location = useLocation();
-  const [hovered, setHovered] = useState(false);
   const [open, setOpen] = useState(false);
+  const [blinking, setBlinking] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const listRef = useRef(null);
+
+  // Eye and pupil DOM refs for 60fps cursor tracking without React re-renders
+  const leftEyeRef = useRef(null);
+  const rightEyeRef = useRef(null);
+  const leftPupilRef = useRef(null);
+  const rightPupilRef = useRef(null);
+
   const ctx = routeContext(location);
+
+  const triggerBlink = () => {
+    setBlinking(true);
+    setTimeout(() => setBlinking(false), 200);
+  };
+
+  const handleToggle = () => {
+    triggerBlink();
+    setOpen((o) => !o);
+  };
+
+  // 1. Real-time Cursor Tracking (requestAnimationFrame + DOM transforms)
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const hasFinePointer = window.matchMedia?.('(pointer: fine)')?.matches;
+
+    // Skip tracking on touch devices or if reduced motion is requested
+    if (prefersReducedMotion || (hasFinePointer !== undefined && !hasFinePointer)) {
+      return;
+    }
+
+    let rafId = null;
+    const MAX_PUPIL_DISTANCE = 3.2;
+
+    const handleMouseMove = (event) => {
+      if (rafId) return;
+
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const eyePairs = [
+          { eye: leftEyeRef.current, pupil: leftPupilRef.current },
+          { eye: rightEyeRef.current, pupil: rightPupilRef.current },
+        ];
+
+        eyePairs.forEach(({ eye, pupil }) => {
+          if (!eye || !pupil) return;
+          const rect = eye.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+
+          const deltaX = event.clientX - centerX;
+          const deltaY = event.clientY - centerY;
+          const angle = Math.atan2(deltaY, deltaX);
+
+          // Gracefully scale distance based on cursor proximity
+          const rawDistance = Math.hypot(deltaX, deltaY);
+          const distance = Math.min(MAX_PUPIL_DISTANCE, rawDistance * 0.045);
+
+          const pupilX = Math.cos(angle) * distance;
+          const pupilY = Math.sin(angle) * distance;
+
+          pupil.style.transform = `translate3d(${pupilX.toFixed(2)}px, ${pupilY.toFixed(2)}px, 0)`;
+        });
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  // 2. Natural Occasional Idle Blink (Randomized 4-8s interval)
+  useEffect(() => {
+    if (open) return;
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    if (prefersReducedMotion) return;
+
+    let timeoutId;
+    const scheduleNextBlink = () => {
+      const delay = Math.random() * 4000 + 4000;
+      timeoutId = setTimeout(() => {
+        triggerBlink();
+        scheduleNextBlink();
+      }, delay);
+    };
+
+    scheduleNextBlink();
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [open]);
 
   const send = async (question, override = {}) => {
     const q = (question || '').trim();
@@ -97,18 +197,22 @@ export default function RexAIFab() {
         <div
           role="dialog"
           aria-label="REX AI assistant"
-          className="fixed z-50 bottom-24 right-4 sm:right-6 w-[min(420px,calc(100vw-2rem))] h-[min(600px,calc(100vh-8rem))] flex flex-col rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl"
+          className="fixed z-50 bottom-24 right-4 sm:right-6 w-[min(420px,calc(100vw-2rem))] h-[min(600px,calc(100vh-8rem))] flex flex-col rounded-2xl glass-dialog"
         >
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-            <span className="text-blue-600 dark:text-blue-400"><SparkleIcon size={18} /></span>
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+            <RexMiniAvatar />
             <div className="min-w-0">
               <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">REX AI Assistant</p>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                 {ctx.projectId ? `Project ${ctx.projectId}${ctx.asOf ? ` · as of ${ctx.asOf}` : ''}` : ctx.page || 'Risk Nexus'}
               </p>
             </div>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close REX"
-              className="ml-auto p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close REX"
+              className="ml-auto p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <X size={16} />
             </button>
           </div>
@@ -170,48 +274,144 @@ export default function RexAIFab() {
         </div>
       )}
 
+      {/* Floating REX AI Orb Button */}
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocus={() => setHovered(true)}
-        onBlur={() => setHovered(false)}
-        aria-label={open ? 'Close REX AI assistant' : 'Open REX AI assistant'}
+        onClick={handleToggle}
+        aria-label={open ? 'Close REX AI Assistant' : 'Open REX AI Assistant'}
         aria-expanded={open}
-        title="REX AI"
-        className="fixed bottom-6 right-6 z-50 group"
+        className="fixed bottom-6 right-6 z-50 group focus:outline-none select-none cursor-pointer"
         style={{ isolation: 'isolate' }}
       >
-        {/* Label — visible on hover */}
+        {/* Subtle, Thin Outer Energy Halo (Toned down and restrained) */}
+        <span
+          className={`absolute -inset-1.5 rounded-full border border-cyan-400/30 transition-all duration-300 pointer-events-none ${
+            open
+              ? 'opacity-100 scale-105 animate-rex-halo'
+              : 'opacity-0 scale-95 group-hover:opacity-70 group-hover:scale-100'
+          }`}
+        />
+
+        {/* Outer Ring & Subtle Cyan/Blue Glow Container */}
         <span
           className={`
-            absolute bottom-full mb-2.5 right-0
-            whitespace-nowrap px-2.5 py-1.5 rounded-lg
-            text-xs font-bold tracking-wide
-            bg-slate-900 dark:bg-white
-            text-white dark:text-slate-900
-            shadow-lg
-            transition-all duration-200
-            pointer-events-none
-            ${hovered && !open ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}
+            relative block rounded-full p-[2px]
+            transition-all duration-300 ease-out
+            group-hover:scale-[1.03]
+            ${open
+              ? 'shadow-[0_0_22px_rgba(6,182,212,0.5),0_0_10px_rgba(99,102,241,0.35)] scale-[1.02]'
+              : 'shadow-[0_0_15px_rgba(6,182,212,0.3),0_0_8px_rgba(59,130,246,0.2)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.45),0_0_10px_rgba(59,130,246,0.3)]'
+            }
           `}
+          style={{
+            background: 'linear-gradient(135deg, #22d3ee 0%, #38bdf8 30%, #3b82f6 60%, #8b5cf6 100%)',
+          }}
         >
-          REX AI Assistant
-          <span className="absolute bottom-[-5px] right-4 w-2.5 h-2.5 bg-slate-900 dark:bg-white rotate-45" />
-        </span>
-
-        {/* Outer ring — blue gradient border */}
-        <span
-          className="block rounded-full p-[2px] shadow-lg shadow-blue-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
-          style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #6366f1 100%)' }}
-        >
-          {/* Inner circle */}
+          {/* Inner 3D Blue-to-Purple AI Sphere */}
           <span
-            className="flex items-center justify-center rounded-full bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 text-white transition-all duration-200"
-            style={{ width: 52, height: 52 }}
+            className="relative flex items-center justify-center rounded-full overflow-hidden transition-all duration-200"
+            style={{
+              width: 56,
+              height: 56,
+              background: 'radial-gradient(circle at 35% 28%, #38bdf8 0%, #2563eb 32%, #1e40af 62%, #6366f1 88%, #4338ca 100%)',
+              boxShadow: 'inset 0 -3px 8px rgba(6, 182, 212, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.35)',
+            }}
           >
-            {open ? <X size={20} /> : <SparkleIcon />}
+            {/* Top-left Glossy Specular Light Highlight */}
+            <span
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle at 36% 22%, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.08) 36%, transparent 65%)',
+              }}
+            />
+
+            {/* ── Unified Internal FACE CONTAINER (Centered vertically & horizontally) ── */}
+            <div className="relative z-10 flex flex-col items-center justify-center pointer-events-none select-none">
+              {/* Symmetrical Eyes Row */}
+              <div
+                className={`flex items-center justify-center gap-2 transition-transform ${
+                  blinking ? 'animate-rex-blink' : ''
+                }`}
+                style={{ transformOrigin: 'center center' }}
+              >
+                {/* Left Eye */}
+                <div
+                  ref={leftEyeRef}
+                  className="relative flex items-center justify-center w-[13.5px] h-[13.5px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35),0_0_1px_rgba(255,255,255,0.9)] overflow-hidden shrink-0"
+                >
+                  {/* Left Pupil */}
+                  <div
+                    ref={leftPupilRef}
+                    className="relative w-[7px] h-[7px] rounded-full bg-slate-950 flex items-center justify-center shrink-0"
+                    style={{
+                      transform: 'translate3d(0, 0, 0)',
+                      transition: 'transform 100ms cubic-bezier(0.22, 1, 0.36, 1)',
+                      willChange: 'transform',
+                    }}
+                  >
+                    {/* Catchlight Specular Highlight */}
+                    <span className="absolute top-[1px] right-[1px] w-[2px] h-[2px] rounded-full bg-white pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Right Eye */}
+                <div
+                  ref={rightEyeRef}
+                  className="relative flex items-center justify-center w-[13.5px] h-[13.5px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.35),0_0_1px_rgba(255,255,255,0.9)] overflow-hidden shrink-0"
+                >
+                  {/* Right Pupil */}
+                  <div
+                    ref={rightPupilRef}
+                    className="relative w-[7px] h-[7px] rounded-full bg-slate-950 flex items-center justify-center shrink-0"
+                    style={{
+                      transform: 'translate3d(0, 0, 0)',
+                      transition: 'transform 100ms cubic-bezier(0.22, 1, 0.36, 1)',
+                      willChange: 'transform',
+                    }}
+                  >
+                    {/* Catchlight Specular Highlight */}
+                    <span className="absolute top-[1px] right-[1px] w-[2px] h-[2px] rounded-full bg-white pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Centered Friendly Mouth (Positioned directly under midpoint of eyes) */}
+              <div className="flex items-center justify-center mt-1">
+                {/* Default subtle curved smile */}
+                <svg
+                  width="9"
+                  height="4.5"
+                  viewBox="0 0 9 4.5"
+                  fill="none"
+                  className={`transition-all duration-200 ${open ? 'hidden' : 'block group-hover:hidden'}`}
+                >
+                  <path
+                    d="M1.2 1.2 Q 4.5 4 7.8 1.2"
+                    stroke="#0b1120"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+                {/* Expressive Open Smile (on Hover or Active attention state) */}
+                <svg
+                  width="9"
+                  height="5.5"
+                  viewBox="0 0 9 5.5"
+                  className={`transition-all duration-200 ${open ? 'block' : 'hidden group-hover:block'}`}
+                >
+                  <path
+                    d="M1.2 1.2 Q 4.5 1.4 7.8 1.2 Q 7.4 5.2 4.5 5.2 Q 1.6 5.2 1.2 1.2 Z"
+                    fill="#0b1120"
+                  />
+                  <path
+                    d="M3 3.6 Q 4.5 5.2 6 3.6 Q 4.5 2.9 3 3.6 Z"
+                    fill="#f472b6"
+                    opacity="0.9"
+                  />
+                </svg>
+              </div>
+            </div>
           </span>
         </span>
       </button>

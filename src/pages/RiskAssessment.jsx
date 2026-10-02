@@ -18,18 +18,20 @@ import {
   getRiskColor,
   formatRiskScore,
   getMatchBadge,
+  RISK_DISCLAIMER,
 } from '../services/mlApi';
 import AIExplanationPanel from '../components/shared/AIExplanationPanel';
 import TermInfo, { useGlossary } from '../components/shared/TermInfo';
+import CountUpNumber from '../components/shared/CountUpNumber';
 import FCMPanel from '../components/fcm/FCMPanel';
 
 // ── Sub-components ──────────────────────────────────────────────────────────────
 
 function DisclaimerBanner({ text }) {
   return (
-    <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-xl px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
+    <div className="flex items-start gap-2 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
       <span className="mt-0.5 flex-shrink-0">⚠️</span>
-      <span className="leading-relaxed">{text}</span>
+      <span>{text}</span>
     </div>
   );
 }
@@ -41,16 +43,16 @@ function RiskScoreCard({ target, prediction, showAnimation }) {
 
   return (
     <div
-      className={`relative rounded-xl border-2 ${colors.border} ${colors.bg} p-5 transition-all duration-300 shadow-2xs
-        ${showAnimation ? 'ring-4 ring-offset-2 ring-blue-400/40 animate-pulse-once' : ''}`}
+      className={`relative rounded-xl border-2 ${colors.border} ${colors.bg} p-5 transition-all duration-500
+        ${showAnimation ? 'ring-4 ring-offset-2 ring-blue-300 animate-pulse-once' : ''}`}
     >
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{target} Risk</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{prediction?.dashboard_label || 'Official XGBoost'}</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{target} Risk</p>
+          <p className="text-xs text-slate-400 mt-0.5">{prediction?.dashboard_label || 'Official XGBoost'}</p>
         </div>
         <span
-          className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${colors.badge}`}
+          className={`px-3 py-1 rounded-full text-xs font-bold ${colors.badge}`}
         >
           {prediction?.risk_class || '—'}
         </span>
@@ -59,27 +61,26 @@ function RiskScoreCard({ target, prediction, showAnimation }) {
       {score !== null ? (
         <>
           <div className="mb-2">
-            <div className="flex justify-between items-end mb-1.5">
-              <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight ${colors.text}`}>
-                {pct}<span className="text-xs font-semibold ml-0.5">pts</span>
+            <div className="flex justify-between items-end mb-1">
+              <span className={`text-3xl font-black ${colors.text}`}>
+                <CountUpNumber value={pct} />
+                <span className="text-sm font-normal ml-0.5 text-slate-400">pts</span>
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                threshold: {((prediction?.threshold ?? 0) * 100).toFixed(0)}pts
-              </span>
+              <span className="text-xs text-slate-400">threshold: {((prediction?.threshold ?? 0) * 100).toFixed(0)}pts</span>
             </div>
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 relative overflow-hidden">
+            <div className="w-full bg-slate-200 rounded-full h-2.5 relative">
               <div
-                className={`h-2 rounded-full transition-all duration-700 ${prediction?.risk_class === 'HIGH' ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                className={`h-2.5 rounded-full transition-all duration-700 ${prediction?.risk_class === 'HIGH' ? 'bg-rose-500' : 'bg-emerald-500'}`}
                 style={{ width: `${Math.min(100, score * 100)}%` }}
               />
               {/* Threshold marker */}
               <div
-                className="absolute top-0 h-2 w-0.5 bg-slate-600 dark:bg-slate-300 rounded-full z-10"
+                className="absolute top-0 h-2.5 w-0.5 bg-slate-500 rounded-full"
                 style={{ left: `${(prediction?.threshold ?? 0) * 100}%` }}
               />
             </div>
           </div>
-          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-xs text-slate-400">
             {prediction?.risk_class === 'HIGH' ? '↑ Above threshold — alert flagged' : '↓ Below threshold — no alert'}
           </p>
         </>
@@ -89,7 +90,6 @@ function RiskScoreCard({ target, prediction, showAnimation }) {
     </div>
   );
 }
-
 
 function SHAPDriverPanel({ target, drivers }) {
   const glossary = useGlossary();
@@ -169,12 +169,39 @@ function OutcomeMatchCard({ outcome }) {
 
 // FCMPanel is now imported from ../components/fcm/FCMPanel
 
+// ── Error Message Extraction Helper ──────────────────────────────────────────
+
+function extractErrorMessage(err) {
+  if (!err) return 'Risk assessment could not be completed. Please try again.';
+  if (typeof err === 'string' && err.trim()) {
+    return err === '[object Object]' ? 'Risk assessment could not be completed. Please try again.' : err.trim();
+  }
+  if (err instanceof Error) {
+    if (err.message && err.message !== '[object Object]') {
+      return err.message;
+    }
+  }
+  if (typeof err.detail === 'string' && err.detail.trim()) {
+    return err.detail.trim();
+  }
+  if (Array.isArray(err.detail) && err.detail.length > 0) {
+    return err.detail.map(d => (typeof d === 'string' ? d : d.msg || d.message || JSON.stringify(d))).join('; ');
+  }
+  if (typeof err.detail === 'object' && err.detail !== null) {
+    return err.detail.message || err.detail.msg || JSON.stringify(err.detail);
+  }
+  if (typeof err.message === 'string' && err.message.trim() && err.message !== '[object Object]') {
+    return err.message.trim();
+  }
+  return 'Risk assessment could not be completed. Please try again.';
+}
+
 // ── Main Page ───────────────────────────────────────────────────────────────────
 
 export default function RiskAssessment() {
   const params = useParams();
   const projectId = params.id || params.projectId || '';
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlAsOf = searchParams.get('as_of') || '';
 
   const [project, setProject] = useState(null);
@@ -198,44 +225,24 @@ export default function RiskAssessment() {
   useEffect(() => {
     if (!projectId) return;
     Promise.all([
-      fetchMLProjectDetail(projectId).catch(() => null),
-      fetchProjectTimeline(projectId).catch(() => null),
+      fetchMLProjectDetail(projectId).catch(e => null),
+      fetchProjectTimeline(projectId).catch(e => null),
     ]).then(([p, t]) => {
-      const projectData = p || {
-        project_id: projectId,
-        sector: 'RAILWAYS',
-        state: 'Maharashtra',
-        source: 'OCMS',
-        status: 'Ongoing',
-        available_months: 6,
-        first_report_month: '2024-01',
-        last_report_month: '2024-06',
-      };
-      const timelineData = t || {
-        timeline: [
-          { report_month: '2024-01-01', is_demo_eligible: true },
-          { report_month: '2024-02-01', is_demo_eligible: true },
-          { report_month: '2024-03-01', is_demo_eligible: true },
-          { report_month: '2024-04-01', is_demo_eligible: true },
-          { report_month: '2024-05-01', is_demo_eligible: true },
-          { report_month: '2024-06-01', is_demo_eligible: true },
-        ],
-      };
-      setProject(projectData);
-      setTimeline(timelineData);
+      setProject(p);
+      setTimeline(t);
       // Auto-select as_of or last eligible/available month
       if (urlAsOf) {
         setSelectedMonth(urlAsOf);
-      } else if (projectData?.last_report_month) {
-        setSelectedMonth(projectData.last_report_month);
-      } else if (timelineData?.timeline?.length > 0) {
-        setSelectedMonth(timelineData.timeline[timelineData.timeline.length - 1].report_month.slice(0, 7));
+      } else if (p?.last_report_month) {
+        setSelectedMonth(p.last_report_month);
+      } else if (t?.timeline && t.timeline.length > 0) {
+        setSelectedMonth(t.timeline[t.timeline.length - 1].report_month.slice(0, 7));
       }
     });
   }, [projectId, urlAsOf]);
 
   const runAssessment = useCallback(async (targetMonth) => {
-    const monthToUse = targetMonth || selectedMonth;
+    const monthToUse = (typeof targetMonth === 'string' && targetMonth.trim()) ? targetMonth.trim() : (typeof selectedMonth === 'string' ? selectedMonth.trim() : '');
     if (!projectId || !monthToUse) return;
     setLoading(true);
     setError(null);
@@ -250,21 +257,8 @@ export default function RiskAssessment() {
       setScoreAnimation(true);
       setTimeout(() => setScoreAnimation(false), 1500);
     } catch (e) {
-      console.warn('Official prediction API unavailable, using offline demo predictions:', e.message);
-      setPrediction({
-        project_id: projectId,
-        as_of: monthToUse,
-        official_predictions: {
-          cost: { model_id: 'cost_cuf_xgb', dashboard_label: 'Official XGBoost', risk_score: 0.36, risk_class: 'HIGH' },
-          schedule: { model_id: 'schedule_cuf_xgb', dashboard_label: 'Official XGBoost', risk_score: 0.30, risk_class: 'HIGH' },
-          compound: { model_id: 'compound_cuf_xgb', dashboard_label: 'Official XGBoost', risk_score: 0.28, risk_class: 'HIGH' },
-        },
-        disclaimer: 'Risk scores are uncalibrated model outputs and are not literal real-world probabilities.',
-        top_drivers: {},
-        data_quality_warnings: [],
-      });
-      setScoreAnimation(true);
-      setTimeout(() => setScoreAnimation(false), 1500);
+      console.error('Risk assessment error:', e);
+      setError(extractErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -385,7 +379,7 @@ export default function RiskAssessment() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={runAssessment}
+              onClick={() => runAssessment(selectedMonth)}
               disabled={loading || !selectedMonth}
               id="btn-run-assessment"
               className="px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all duration-200 inline-flex items-center gap-2"
@@ -400,35 +394,16 @@ export default function RiskAssessment() {
         </div>
       </div>
 
-      {/* Project info */}
-      {project && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Project Information</h3>
-          <dl className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              ['Project ID', project.project_id],
-              ['Sector', project.sector],
-              ['State', project.state],
-              ['Source', project.source],
-              ['Status', project.status],
-              ['Data Points', project.available_months],
-              ['First Month', project.first_report_month],
-              ['Last Month', project.last_report_month],
-            ].map(([label, value]) => (
-              <div key={label} className="bg-slate-50 dark:bg-slate-700 rounded-lg p-3">
-                <dt className="text-xs text-slate-400 uppercase tracking-wide">{label}</dt>
-                <dd className="text-sm font-semibold text-slate-800 dark:text-white mt-0.5">{value || '—'}</dd>
-              </div>
-            ))}
-          </dl>
+      {error && (
+        <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl p-4 text-sm text-rose-800 dark:text-rose-200 flex items-start gap-3 shadow-xs animate-fade-in">
+          <span className="text-rose-600 dark:text-rose-400 shrink-0 text-base mt-0.5">⚠️</span>
+          <div className="space-y-1">
+            <h4 className="font-semibold text-rose-900 dark:text-rose-100">Risk Assessment Unavailable</h4>
+            <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">{typeof error === 'string' ? error : extractErrorMessage(error)}</p>
+          </div>
         </div>
       )}
 
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 rounded-lg px-4 py-3 text-sm text-rose-700">
-          ⚠ {error}
-        </div>
-      )}
 
       {/* Official Predictions */}
       {prediction && (
@@ -533,7 +508,9 @@ export default function RiskAssessment() {
       )}
 
       {/* FCM Simulator */}
-      <FCMPanel projectId={projectId} asOf={selectedMonth || '2024-06'} />
+      {prediction && (
+        <FCMPanel projectId={projectId} asOf={selectedMonth || '2024-06'} />
+      )}
 
       {/* Exploratory Analysis (separate panel) */}
       {showAnalysis && analysisPred && (
@@ -600,7 +577,29 @@ export default function RiskAssessment() {
         </div>
       )}
 
-
+      {/* Project info */}
+      {project && (
+        <div className="glass-card rounded-xl p-5 animate-slide-up stagger-3">
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Project Information</h3>
+          <dl className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              ['Project ID', project.project_id],
+              ['Sector', project.sector],
+              ['State', project.state || project.state_std || project.location],
+              ['Source', project.source],
+              ['Status', project.status],
+              ['Data Points', project.available_months ? `${project.available_months} months` : null],
+              ['First Month', project.first_report_month],
+              ['Last Month', project.last_report_month],
+            ].map(([label, value]) => (
+              <div key={label} className="glass-panel rounded-lg p-3">
+                <dt className="text-xs text-slate-400 uppercase tracking-wide font-medium">{label}</dt>
+                <dd className="text-sm font-semibold text-slate-850 dark:text-white mt-0.5">{value || '—'}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
     </div>
   );
 }

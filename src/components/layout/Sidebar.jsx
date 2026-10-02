@@ -20,8 +20,8 @@ import { NavLink } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-  { id: 'public', label: 'Public Dashboard', icon: Globe, path: '/public' },
+  { id: 'public', label: 'Public Dashboard', icon: Globe, path: '/' },
+  { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard, path: '/overview' },
   {
     id: 'projects',
     label: 'Projects',
@@ -72,7 +72,7 @@ const navItems = [
   },
 ];
 
-export default function Sidebar({ isCollapsed, toggleSidebar }) {
+export default function Sidebar({ isCollapsed, toggleSidebar, isHeaderVisible = true }) {
   const { theme, toggleTheme } = useTheme();
   const [expandedMenu, setExpandedMenu] = useState(null);
 
@@ -87,34 +87,35 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
     setExpandedMenu((prev) => (prev === menuId ? null : menuId));
   };
 
-  const baseLinkClasses = `w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-1.5' : 'justify-between gap-3 px-3 py-2.5'} rounded-lg text-sm transition-colors duration-150 cursor-pointer select-none`;
-  const activeLinkClasses = 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border-l-2 border-blue-600 dark:border-blue-400 pl-2.5';
-  const inactiveLinkClasses = 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-slate-900/60 font-medium';
+  const baseLinkClasses = `w-full flex items-center ${isCollapsed ? 'justify-center py-3' : 'justify-between gap-3 px-3 py-2.5'} rounded-lg text-sm transition-colors duration-150 cursor-pointer`;
+  const activeLinkClasses = 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium';
+  const inactiveLinkClasses = 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800';
 
-  const subLinkBaseClasses = 'w-full flex items-center pl-10 pr-3 py-2 rounded-lg text-xs transition-colors duration-150 select-none';
-  const subLinkActiveClasses = 'text-blue-700 dark:text-blue-300 font-semibold bg-blue-50/80 dark:bg-blue-950/30';
-  const subLinkInactiveClasses = 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-slate-900/50';
+  const subLinkBaseClasses = 'w-full flex items-center pl-10 pr-3 py-2 rounded-lg text-xs transition-colors duration-150';
+  const subLinkActiveClasses = 'text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20';
+  const subLinkInactiveClasses = 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/70';
 
   return (
     <aside
-      className={`h-full bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-200 ease-in-out shrink-0 pt-[68px] ${isCollapsed ? 'w-[64px]' : 'w-64'}`}
+      className={`h-full glass-nav border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col transition-all duration-200 ease-out shrink-0 ${
+        isHeaderVisible ? 'pt-[68px]' : 'pt-0'
+      } ${isCollapsed ? 'w-[60px]' : 'w-64'}`}
     >
       {/* Sidebar Header with 2-way Hamburger Toggle */}
       <div
-        className={`border-b border-slate-200/80 dark:border-slate-800/80 flex items-center h-14 shrink-0 px-3.5 ${
+        className={`border-b border-slate-200 dark:border-slate-800 flex items-center h-14 shrink-0 px-3.5 ${
           isCollapsed ? 'justify-center' : 'justify-start'
         }`}
       >
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
           title={isCollapsed ? 'Expand Sidebar (☰)' : 'Collapse Sidebar (☰)'}
           aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
-          <Menu size={19} className="shrink-0" />
+          <Menu size={20} className="shrink-0" />
         </button>
       </div>
-
 
       {/* Navigation Links and Action Controls */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -203,8 +204,8 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
             <button
               onClick={toggleTheme}
               className={`w-full flex items-center ${
-                isCollapsed ? 'justify-center py-2.5 px-1.5' : 'gap-3 px-3 py-2.5'
-              } rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-slate-900/60 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer select-none`}
+                isCollapsed ? 'justify-center py-3' : 'gap-3 px-3 py-2.5'
+              } rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500`}
               title={isCollapsed ? (theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode') : undefined}
               aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
@@ -227,11 +228,11 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
               to="/login"
               className={({ isActive }) =>
                 `w-full flex items-center ${
-                  isCollapsed ? 'justify-center py-2.5 px-1.5' : 'gap-3 px-3 py-2.5'
-                } rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 select-none ${
+                  isCollapsed ? 'justify-center py-3' : 'gap-3 px-3 py-2.5'
+                } rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isActive
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border-l-2 border-blue-600 dark:border-blue-400 pl-2.5'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-slate-900/60 font-medium'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`
               }
               title={isCollapsed ? 'Sign In — Government Official Access' : undefined}
@@ -240,10 +241,10 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
               <LogIn size={18} className="shrink-0 text-blue-600 dark:text-blue-400" />
               {!isCollapsed && (
                 <div className="flex flex-col text-left min-w-0">
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
+                  <span className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">
                     Sign In
                   </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight truncate">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight truncate">
                     Govt Official Access
                   </span>
                 </div>
