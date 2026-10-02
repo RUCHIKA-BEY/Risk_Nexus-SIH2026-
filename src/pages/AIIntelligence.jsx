@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, Brain, ShieldAlert, FileText, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { fetchMLProjects, fetchModelsStatus } from '../services/mlApi';
 import SectionCard from '../components/shared/SectionCard';
@@ -25,21 +25,25 @@ export default function AIIntelligence() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">AI Intelligence & Early-Warning</h1>
-            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">AI Intelligence & Early-Warning</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
               Gemini + XGBoost SHAP
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Structured explainability and causal scenario simulation powered by deterministic ML models and Gemini reasoning.
           </p>
         </div>
       </div>
 
-
       {loading ? (
-        <div className="py-16 flex justify-center"><LoadingSpinner /></div>
+        <div className="py-16 flex justify-center">
+          <LoadingSpinner
+            label="Loading AI intelligence models — please wait…"
+            sublabel="Initializing SHAP explainability and synthesis pipelines"
+          />
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <SectionCard
@@ -70,11 +74,13 @@ export default function AIIntelligence() {
                   <div className="shrink-0 flex sm:self-center">
                     <Link
                       to={`/projects/${encodeURIComponent(p.project_id)}/risk?as_of=${p.last_report_month || ''}`}
+                      state={{ source: 'ai', returnTo: '/ai/insights' }}
                       className="w-full sm:w-auto px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                       aria-label={`AI Synthesis for ${p.project_id}`}
                     >
                       AI Synthesis <ArrowRight size={13} />
                     </Link>
+
                   </div>
                 </div>
               ))}

@@ -98,18 +98,18 @@ function MainLayout() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-900">
+    <div className="flex flex-col h-screen overflow-hidden app-background">
       <TopBanner isVisible={isHeaderVisible} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
+        <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} isHeaderVisible={isHeaderVisible} />
         <div className="flex-1 flex flex-col overflow-hidden relative">
           <main
             ref={mainRef}
             id="main-content"
             tabIndex={-1}
-            className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 outline-none flex flex-col justify-between"
+            className="flex-1 overflow-y-auto bg-transparent outline-none flex flex-col justify-between"
           >
-            <div className="flex-1 pt-[68px]">
+            <div className={`flex-1 transition-all duration-200 ease-out ${isHeaderVisible ? 'pt-[68px]' : 'pt-0'}`}>
               <Outlet />
             </div>
             <Footer />
@@ -118,6 +118,7 @@ function MainLayout() {
       </div>
       <RexAIFab />
     </div>
+
   );
 }
 
@@ -127,8 +128,9 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           {/* Top-level routes */}
-          <Route index element={<ExecutiveOverview />} />
-          <Route path="public" element={<PublicDashboard />} />
+          <Route index element={<PublicDashboard />} />
+          <Route path="overview" element={<ExecutiveOverview />} />
+          <Route path="public" element={<Navigate to="/" replace />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="login" element={<Login />} />

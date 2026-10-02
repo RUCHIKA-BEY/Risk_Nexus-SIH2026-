@@ -28,7 +28,7 @@ function DriverRow({ d, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen);
   const up = d.effect.includes('raises');
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60">
+    <div className="rounded-lg glass-panel transition-all">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -66,7 +66,7 @@ export default function AIExplanationPanel({ data, projectId, asOf }) {
     window.dispatchEvent(new CustomEvent('rex:ask', { detail: { question, projectId, asOf } }));
 
   return (
-    <div className="rounded-xl border border-violet-200 dark:border-violet-800 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800/80 p-5 space-y-6">
+    <div className="rounded-xl glass-panel border-violet-200/60 dark:border-violet-800/30 p-5 space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <Sparkles size={18} className="text-violet-600 dark:text-violet-300" />
         <h3 className="text-base font-bold text-violet-900 dark:text-white">AI Explanation</h3>

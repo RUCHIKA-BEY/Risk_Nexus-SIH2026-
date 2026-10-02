@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MapPin, TrendingUp, Layers, ExternalLink } from 'lucide-react';
+import { MapPin, TrendingUp, ShieldAlert, Layers, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import INDIA_PROJECTED_STATES from '../../assets/india_projected_paths.json';

@@ -11,6 +11,7 @@ from app.schemas import (
     OfficialPredictionResponse,
     SingleModelResult,
     TrajectoryResponse,
+    HighValueProjectsResponse,
 )
 from app.services.project_service import (
     list_projects_paginated,
@@ -20,6 +21,7 @@ from app.services.project_service import (
     get_project_rows_as_of,
     get_portfolio_metrics,
     compare_projects,
+    get_high_value_projects,
 )
 from app.services.model_service import score_row, classify, OFFICIAL_XGB_FEATURES
 from app.services.registry_service import get_model_config, get_official_model_ids
@@ -72,6 +74,15 @@ def get_projects(
 def get_metrics():
     """Returns dynamic KPI metrics calculated across the active canonical dataset."""
     return get_portfolio_metrics()
+
+
+@router.get("/projects/high-value", response_model=HighValueProjectsResponse, tags=["Projects"])
+def get_top_high_value_projects(limit: int = Query(default=20, ge=1, le=100)):
+    """
+    Returns the top N unique highest-value projects ranked by sanctioned cost descending
+    using the latest available monthly snapshot.
+    """
+    return get_high_value_projects(limit=limit)
 
 
 @router.post("/projects/compare", response_model=CompareProjectsResponse, tags=["Projects"])

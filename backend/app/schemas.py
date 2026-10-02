@@ -159,9 +159,10 @@ class PredictRequest(BaseModel):
     @field_validator("project_id")
     @classmethod
     def validate_project_id(cls, v: str) -> str:
-        if not re.match(r"^[A-Za-z0-9_\-\.]{1,50}$", v):
+        if not re.match(r"^[A-Za-z0-9_\-\.:]{1,100}$", v):
             raise ValueError("Invalid project_id format")
         return v
+
 
 
 # ── Trajectory ─────────────────────────────────────────────────────────────────
@@ -381,3 +382,29 @@ class CompareProjectItem(BaseModel):
 class CompareProjectsResponse(BaseModel):
     projects: list[CompareProjectItem]
     disclaimer: str = RISK_SCORE_DISCLAIMER
+
+
+# ── High-Value Projects Schema for Public Dashboard ──────────────────────────────
+
+class HighValueProjectItem(BaseModel):
+    rank: int
+    project_id: str
+    name: Optional[str] = None
+    sector: Optional[str] = None
+    state: Optional[str] = None
+    agency: Optional[str] = None
+    status: Optional[str] = "Ongoing"
+    observations: Optional[str] = None
+    available_months: Optional[int] = 0
+    last_report_month: Optional[str] = None
+    sanctioned_cost: float
+    cumulative_expenditure: Optional[float] = None
+    current_forecast_cost: Optional[float] = None
+    physical_progress_pct: Optional[float] = None
+    risk_status: Optional[str] = None
+
+
+class HighValueProjectsResponse(BaseModel):
+    total: int
+    items: list[HighValueProjectItem]
+

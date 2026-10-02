@@ -44,6 +44,8 @@ from app.schemas import (
     OperationalPriorityResponse,
     CompareProjectItem,
     CompareProjectsResponse,
+    HighValueProjectItem,
+    HighValueProjectsResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -745,3 +747,70 @@ def compare_projects(project_ids: list[str]) -> CompareProjectsResponse:
         )
 
     return CompareProjectsResponse(projects=items)
+
+
+def get_high_value_projects(limit: int = 20) -> HighValueProjectsResponse:
+    """
+    Returns the top N unique highest-value projects ranked by sanctioned project cost
+    (original_cost descending) using the latest available reporting snapshot for each project.
+    Only includes canonical project identifiers that integrate with the existing project drill-down.
+    """
+    sdf = get_summary_df()
+    manifest = get_demo_manifest()
+    demo_labels = {d["project_id"]: d.get("demo_label") for d in manifest.get("demo_projects", [])}
+
+    # Filter canonical projects (exclude internal surrogate row-hash prefixes)
+    canonical_mask = ~sdf["project_id"].str.contains(r"^(?:PAO_NAME|OCMS_ROW|PAO|PAC):", regex=True)
+    valid_df = sdf[canonical_mask & sdf["original_cost"].notna() & (sdf["original_cost"] > 0)].copy()
+    sorted_df = valid_df.sort_values("original_cost", ascending=False).head(limit)
+
+    items = []
+    for rank, (pid, row) in enumerate(sorted_df.iterrows(), 1):
+        clean_pid = str(pid).strip()
+        name = demo_labels.get(clean_pid)
+
+        # Sector, State, Agency normalization directly from dataset
+        sector = str(row["sector"]).strip() if row.get("sector") and str(row["sector"]).strip() else None
+        state = str(row["state"]).strip() if row.get("state") and str(row["state"]).strip() else None
+        agency = str(row["agency"]).strip() if row.get("agency") and str(row["agency"]).strip() else None
+        status = str(row.get("status", "Ongoing")).strip() or "Ongoing"
+        available_months = int(row.get("available_months", 1)) if pd.notna(row.get("available_months")) else 1
+        last_month = str(row.get("last_report_month", "")).strip() or None
+
+        sanctioned_cost = round(float(row["original_cost"]), 2)
+        cum_exp = round(float(row["cumulative_expenditure"]), 2) if pd.notna(row.get("cumulative_expenditure")) else None
+        forecast_cost = round(float(row["current_forecast_cost"]), 2) if pd.notna(row.get("current_forecast_cost")) else None
+        prog_pct = round(float(row["physical_progress_pct"]), 1) if pd.notna(row.get("physical_progress_pct")) else None
+
+        # Existing risk classification
+        if bool(row.get("schedule_eligible_6m")):
+            risk_status = "Schedule Flagged"
+        elif bool(row.get("cost_eligible_6m")):
+            risk_status = "Cost Flagged"
+        elif bool(row.get("compound_eligible_6m")):
+            risk_status = "Compound Risk"
+        else:
+            risk_status = "Standard Monitoring"
+
+        items.append(
+            HighValueProjectItem(
+                rank=rank,
+                project_id=clean_pid,
+                name=name,
+                sector=sector,
+                state=state,
+                agency=agency,
+                status=status,
+                observations=None,
+                available_months=available_months,
+                last_report_month=last_month,
+                sanctioned_cost=sanctioned_cost,
+                cumulative_expenditure=cum_exp,
+                current_forecast_cost=forecast_cost,
+                physical_progress_pct=prog_pct,
+                risk_status=risk_status,
+            )
+        )
+
+    return HighValueProjectsResponse(total=len(items), items=items)
+
