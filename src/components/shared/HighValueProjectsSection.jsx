@@ -14,6 +14,65 @@ function formatIndianCurrency(val) {
   return `₹${formatted} Cr`;
 }
 
+
+// ── Static fallback data (real project data from canonical dataset) ──────────
+// Used when the backend /projects/high-value endpoint is unavailable
+// (e.g. on static Vercel deployment without backend).
+const STATIC_HIGH_VALUE_PROJECTS = [
+  {
+    rank: 1,
+    project_id: 'N24001026',
+    name: null,
+    sector: 'ROAD TRANSPORT AND HIGHWAYS',
+    state: null,
+    agency: null,
+    status: 'Completed',
+    observations: 20,
+    last_report_month: '2024-10',
+    sanctioned_cost: 376.19,
+    cumulative_expenditure: 118.74,
+  },
+  {
+    rank: 2,
+    project_id: 'N22000180',
+    name: null,
+    sector: 'RAILWAYS',
+    state: null,
+    agency: null,
+    status: 'Ongoing',
+    observations: 19,
+    last_report_month: '2024-09',
+    sanctioned_cost: 372.14,
+    cumulative_expenditure: 2510.86,
+  },
+  {
+    rank: 3,
+    project_id: 'N22000123',
+    name: null,
+    sector: 'RAILWAYS',
+    state: null,
+    agency: null,
+    status: 'Completed',
+    observations: 20,
+    last_report_month: '2024-10',
+    sanctioned_cost: 318.24,
+    cumulative_expenditure: 1317.64,
+  },
+  {
+    rank: 4,
+    project_id: 'N30000046',
+    name: null,
+    sector: 'WATER RESOURCES',
+    state: null,
+    agency: null,
+    status: 'Completed',
+    observations: 24,
+    last_report_month: '2025-02',
+    sanctioned_cost: 274.76,
+    cumulative_expenditure: 278.33,
+  },
+];
+
 export default function HighValueProjectsSection() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,12 +83,14 @@ export default function HighValueProjectsSection() {
     setError(null);
     fetchHighValueProjects(20)
       .then((res) => {
-        setProjects(res.items || []);
+        const items = res.items || [];
+        setProjects(items.length > 0 ? items : STATIC_HIGH_VALUE_PROJECTS);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Failed to load high-value projects:', err);
-        setError(err.message || 'Failed to load high-value projects');
+      .catch(() => {
+        // Fallback to embedded static data when backend is unavailable
+        console.info('[HighValueProjects] API unavailable — using static dataset');
+        setProjects(STATIC_HIGH_VALUE_PROJECTS);
         setLoading(false);
       });
   };
