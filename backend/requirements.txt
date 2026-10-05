@@ -5,7 +5,7 @@ uvicorn[standard]>=0.30.0
 xgboost==3.2.0
 # The frozen Phase 6 bundles were serialized with scikit-learn 1.6.1. Do NOT change it:
 # loading the pickles with another version is unsupported.
-scikit-learn>=1.6.1
+scikit-learn==1.6.1
 pandas==3.0.2
 numpy==2.4.4
 joblib==1.6.0
